@@ -2,8 +2,8 @@
 <html lang="en" class="h-full bg-slate-900 text-slate-100">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vehicle Research Hub v1.3 - CarMax Inventory Reconciliation & Lot Inspection</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vehicle Research Hub v1.4 - CarMax Inventory Reconciliation & Lot Inspection</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -43,7 +43,7 @@
     .print-only { display: none; }
   </style>
 </head>
-<body class="h-full flex flex-col min-h-screen">
+<body class="h-full flex flex-col min-h-screen overflow-x-hidden">
 
   <!-- Header / Navigation -->
   <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-30 no-print">
@@ -54,8 +54,8 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-xl font-bold tracking-tight text-white">Vehicle Research Hub</h1>
-            <span class="bg-blue-900/80 text-blue-300 text-xs font-semibold px-2 py-0.5 rounded-full border border-blue-700/50">v1.3</span>
+            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">Vehicle Research Hub</h1>
+            <span class="bg-blue-900/80 text-blue-300 text-xs font-semibold px-2 py-0.5 rounded-full border border-blue-700/50">v1.4</span>
           </div>
           <p class="text-xs text-slate-400">CarMax Inventory Reconciliation & Lot Inspection Tracker</p>
         </div>
@@ -81,10 +81,10 @@
   </header>
 
   <!-- MAIN INTERACTIVE APP VIEW -->
-  <main id="view-interactive" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 no-print">
+  <main id="view-interactive" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 no-print">
 
     <!-- Search & Filter Controls Toolbar -->
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-3 sm:p-4 shadow-xl flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
       
       <!-- Search Input Bar -->
       <div class="relative flex-1">
@@ -203,34 +203,41 @@
     </div>
   </div>
 
-  <!-- EDIT RESEARCH NOTES MODAL -->
-  <div id="edit-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
-      <div class="p-4 bg-slate-900 border-b border-slate-700 flex justify-between items-center">
-        <div>
-          <h3 class="font-bold text-white flex items-center gap-2">
-            <i data-lucide="edit-3" class="w-4 h-4 text-blue-400"></i>
-            Edit Research Notes
+  <!-- MOBILE-OPTIMIZED EDIT RESEARCH NOTES MODAL (v1.4) -->
+  <div id="edit-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-[calc(100vw-1.5rem)] sm:max-w-lg overflow-hidden shadow-2xl my-auto">
+      
+      <!-- Modal Header -->
+      <div class="p-4 bg-slate-900 border-b border-slate-700 flex justify-between items-center gap-2">
+        <div class="min-w-0 flex-1">
+          <h3 class="font-bold text-white flex items-center gap-2 text-sm sm:text-base">
+            <i data-lucide="edit-3" class="w-4 h-4 text-blue-400 shrink-0"></i>
+            <span class="truncate">Edit Research Notes</span>
           </h3>
-          <p id="modal-vehicle-subtitle" class="text-xs text-slate-400 mt-0.5">Stock # ------</p>
+          <p id="modal-vehicle-subtitle" class="text-xs text-slate-400 mt-0.5 font-mono truncate">Stock # ------</p>
         </div>
-        <button onclick="closeEditModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="closeEditModal()" class="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 shrink-0"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
 
-      <div class="p-5 space-y-4 text-xs">
-        <!-- Static Vehicle Context Summary -->
-        <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50 space-y-1">
-          <div class="flex justify-between font-medium">
-            <span id="modal-vehicle-title" class="text-white font-bold">---</span>
-            <span id="modal-vehicle-status" class="text-blue-400">---</span>
+      <!-- Modal Body -->
+      <div class="p-4 sm:p-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
+        
+        <!-- Mobile Portrait Auto-Wrapping Context Card -->
+        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 space-y-2">
+          <div class="flex flex-wrap items-center justify-between gap-1.5">
+            <div id="modal-vehicle-title" class="text-white font-bold text-xs sm:text-sm leading-snug break-words max-w-full">---</div>
+            <span id="modal-vehicle-status" class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-900/50 text-blue-300 border border-blue-700/50 shrink-0">---</span>
           </div>
-          <p id="modal-vehicle-vin" class="font-mono text-slate-400">VIN: ---</p>
+          <div class="pt-1 border-t border-slate-800 flex flex-wrap justify-between text-[11px] text-slate-400 font-mono gap-1">
+            <span id="modal-vehicle-vin" class="break-all">VIN: ---</span>
+            <span id="modal-vehicle-color" class="text-slate-300">Color: ---</span>
+          </div>
         </div>
 
         <!-- Research Tag Selector -->
         <div>
           <label class="block text-slate-300 font-medium mb-1.5">Research Tag / Code</label>
-          <select id="modal-code" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 outline-none focus:border-blue-500">
+          <select id="modal-code" class="w-full bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm rounded-xl p-2.5 outline-none focus:border-blue-500">
             <option value="Unassigned">Unassigned</option>
             <option value="Priority Lead">Priority Lead</option>
             <option value="Needs Inspection">Needs Inspection</option>
@@ -243,13 +250,14 @@
         <!-- Comments Textarea -->
         <div>
           <label class="block text-slate-300 font-medium mb-1.5">Research Comments & Inspection Notes</label>
-          <textarea id="modal-comments" rows="4" placeholder="Enter evaluation details, pricing notes, lot condition, or inspection status..." class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-3 outline-none focus:border-blue-500 placeholder:text-slate-500"></textarea>
+          <textarea id="modal-comments" rows="4" placeholder="Enter evaluation details, pricing notes, lot condition, or inspection status..." class="w-full bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm rounded-xl p-3 outline-none focus:border-blue-500 placeholder:text-slate-500 min-h-[100px] resize-y"></textarea>
         </div>
       </div>
 
-      <div class="p-4 bg-slate-900/80 border-t border-slate-700 flex justify-end gap-2">
-        <button onclick="closeEditModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl">Cancel</button>
-        <button onclick="saveVehicleNotes()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5">
+      <!-- Modal Footer -->
+      <div class="p-3 sm:p-4 bg-slate-900/80 border-t border-slate-700 flex justify-end gap-2">
+        <button onclick="closeEditModal()" class="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors">Cancel</button>
+        <button onclick="saveVehicleNotes()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-600/20 transition-all">
           <i data-lucide="check" class="w-4 h-4"></i> Save Notes
         </button>
       </div>
@@ -342,7 +350,7 @@
     });
 
     function initDataStore() {
-      const stored = localStorage.getItem('carmax_research_vehicles_v1.3');
+      const stored = localStorage.getItem('carmax_research_vehicles_v1.4');
       if (stored) {
         try {
           vehiclesState = JSON.parse(stored);
@@ -365,7 +373,7 @@
         code: item.code || "Unassigned",
         modifiedDate: item.comments || item.code !== "Unassigned" ? "Sep 21, 10:30 AM" : "Sep 21, 08:00 AM"
       }));
-      localStorage.setItem('carmax_research_vehicles_v1.3', JSON.stringify(formatted));
+      localStorage.setItem('carmax_research_vehicles_v1.4', JSON.stringify(formatted));
       return formatted;
     }
 
@@ -511,25 +519,25 @@
         });
       }
 
-      // Render Mobile Cards
+      // Render Mobile Touch Cards
       const cardContainer = document.getElementById('mobile-card-container');
       cardContainer.innerHTML = '';
       filteredVehicles.forEach(v => {
         const card = document.createElement('div');
-        card.className = "bg-slate-800 border border-slate-700 rounded-2xl p-4 space-y-3 shadow-lg";
+        card.className = "bg-slate-800 border border-slate-700 rounded-2xl p-3.5 space-y-3 shadow-lg";
         card.innerHTML = `
-          <div class="flex justify-between items-start">
-            <div>
+          <div class="flex justify-between items-start gap-2">
+            <div class="min-w-0 flex-1">
               <span class="text-xs font-mono text-blue-400 font-bold">#${v.stockNum}</span>
-              <h4 class="font-bold text-white text-sm mt-0.5">${v.year} ${v.vehicleDescription}</h4>
+              <h4 class="font-bold text-white text-sm mt-0.5 leading-snug break-words">${v.year} ${v.vehicleDescription}</h4>
             </div>
-            ${getResearchTagBadge(v.code)}
+            <div class="shrink-0">${getResearchTagBadge(v.code)}</div>
           </div>
 
           <div class="grid grid-cols-2 gap-2 text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/50">
             <div><span class="text-slate-500">Location:</span> <strong class="text-slate-200 font-mono">${v.lastScanLocation}</strong></div>
             <div><span class="text-slate-500">Color:</span> <strong class="text-slate-200">${v.color}</strong></div>
-            <div class="col-span-2"><span class="text-slate-500">VIN:</span> <strong class="text-slate-300 font-mono text-[10px]">${v.vin}</strong></div>
+            <div class="col-span-2"><span class="text-slate-500">VIN:</span> <strong class="text-slate-300 font-mono text-[10px] break-all">${v.vin}</strong></div>
             <div class="col-span-2"><span class="text-slate-500">Zone:</span> <strong class="text-slate-300 text-[11px]">${v.zoneDescription}</strong></div>
           </div>
 
@@ -542,7 +550,7 @@
 
           <div class="flex items-center justify-between pt-1 border-t border-slate-700/50">
             <span class="text-[10px] text-slate-400">Modified: ${v.modifiedDate || 'Never'}</span>
-            <button onclick="openEditModal('${v.stockNum}')" class="px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-semibold flex items-center gap-1">
+            <button onclick="openEditModal('${v.stockNum}')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1 shadow-md shadow-blue-600/20">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit Notes
             </button>
           </div>
@@ -556,12 +564,12 @@
 
     function getResearchTagBadge(code) {
       switch(code) {
-        case 'Priority Lead': return `<span class="px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-[10px] font-bold">Priority Lead</span>`;
-        case 'Needs Inspection': return `<span class="px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded text-[10px] font-bold">Needs Inspection</span>`;
-        case 'Pending Review': return `<span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] font-bold">Pending Review</span>`;
-        case 'Hold': return `<span class="px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded text-[10px] font-bold">Hold</span>`;
-        case 'Archive': return `<span class="px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-[10px] font-bold">Archive</span>`;
-        default: return `<span class="px-2 py-0.5 bg-slate-800 text-slate-500 border border-slate-700 rounded text-[10px]">Unassigned</span>`;
+        case 'Priority Lead': return `<span class="px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-[10px] font-bold inline-block">Priority Lead</span>`;
+        case 'Needs Inspection': return `<span class="px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded text-[10px] font-bold inline-block">Needs Inspection</span>`;
+        case 'Pending Review': return `<span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] font-bold inline-block">Pending Review</span>`;
+        case 'Hold': return `<span class="px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded text-[10px] font-bold inline-block">Hold</span>`;
+        case 'Archive': return `<span class="px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-[10px] font-bold inline-block">Archive</span>`;
+        default: return `<span class="px-2 py-0.5 bg-slate-800 text-slate-500 border border-slate-700 rounded text-[10px] inline-block">Unassigned</span>`;
       }
     }
 
@@ -582,53 +590,56 @@
         secEl.className = "border border-black p-3 space-y-2";
         secEl.innerHTML = `
           <h4 class="font-bold border-b border-black pb-1 uppercase">${secTitle}</h4>
-          <table class="w-full text-left text-[10px]">
-            <thead>
-              <tr class="border-b border-slate-400">
-                <th class="py-1">Stock Num</th>
-                <th>Year</th>
-                <th>Vehicle Description</th>
-                <th>Last Scan Date</th>
-                <th>Scan Loc</th>
-                <th>Zone Description</th>
-                <th>Color</th>
-                <th>VIN</th>
-                <th>Status</th>
-                <th>Research Notes</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200">
-              ${items.map(item => `
-                <tr>
-                  <td class="py-1 font-bold">${item.stockNum}</td>
-                  <td>${item.year}</td>
-                  <td>${item.vehicleDescription}</td>
-                  <td>${item.lastScanDate}</td>
-                  <td>${item.lastScanLocation}</td>
-                  <td>${item.zoneDescription}</td>
-                  <td>${item.color}</td>
-                  <td>${item.vin}</td>
-                  <td>${item.productStatus}</td>
-                  <td class="italic">${item.comments || '-'}</td>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-[10px]">
+              <thead>
+                <tr class="border-b border-slate-400">
+                  <th class="py-1">Stock Num</th>
+                  <th>Year</th>
+                  <th>Vehicle Description</th>
+                  <th>Last Scan Date</th>
+                  <th>Scan Loc</th>
+                  <th>Zone Description</th>
+                  <th>Color</th>
+                  <th>VIN</th>
+                  <th>Status</th>
+                  <th>Research Notes</th>
                 </tr>
-              `).map(row => row).join('')}
-            </tbody>
-          </table>
+              </thead>
+              <tbody class="divide-y divide-slate-200">
+                ${items.map(item => `
+                  <tr>
+                    <td class="py-1 font-bold">${item.stockNum}</td>
+                    <td>${item.year}</td>
+                    <td>${item.vehicleDescription}</td>
+                    <td>${item.lastScanDate}</td>
+                    <td>${item.lastScanLocation}</td>
+                    <td>${item.zoneDescription}</td>
+                    <td>${item.color}</td>
+                    <td>${item.vin}</td>
+                    <td>${item.productStatus}</td>
+                    <td class="italic">${item.comments || '-'}</td>
+                  </tr>
+                `).map(row => row).join('')}
+              </tbody>
+            </table>
+          </div>
         `;
         container.appendChild(secEl);
       }
     }
 
-    // EDIT MODAL ACTIONS
+    // EDIT MODAL ACTIONS (v1.4 Mobile Portrait Optimization)
     function openEditModal(stockNum) {
       activeEditingStockNum = stockNum;
       const vehicle = vehiclesState.find(v => v.stockNum === stockNum);
       if (!vehicle) return;
 
-      document.getElementById('modal-vehicle-subtitle').innerText = `Stock #${vehicle.stockNum} | ${vehicle.color}`;
+      document.getElementById('modal-vehicle-subtitle').innerText = `Stock #${vehicle.stockNum}`;
       document.getElementById('modal-vehicle-title').innerText = `${vehicle.year} ${vehicle.vehicleDescription}`;
       document.getElementById('modal-vehicle-status').innerText = vehicle.productStatus;
       document.getElementById('modal-vehicle-vin').innerText = `VIN: ${vehicle.vin}`;
+      document.getElementById('modal-vehicle-color').innerText = `Color: ${vehicle.color}`;
       document.getElementById('modal-comments').value = vehicle.comments || '';
       document.getElementById('modal-code').value = vehicle.code || 'Unassigned';
 
@@ -654,7 +665,7 @@
                               now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
         // Save State
-        localStorage.setItem('carmax_research_vehicles_v1.3', JSON.stringify(vehiclesState));
+        localStorage.setItem('carmax_research_vehicles_v1.4', JSON.stringify(vehiclesState));
         applyFiltersAndSort();
         closeEditModal();
       }
@@ -688,7 +699,7 @@
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(vehiclesState, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `carmax_vehicle_research_v1.3_${new Date().toISOString().slice(0,10)}.json`);
+      downloadAnchor.setAttribute("download", `carmax_vehicle_research_v1.4_${new Date().toISOString().slice(0,10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
