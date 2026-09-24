@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Vehicle Research Hub v1.4 - CarMax Inventory Reconciliation & Lot Inspection</title>
+  <title>Vehicle Research Hub v1.7.4 - CarMax Inventory Reconciliation</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -34,6 +34,13 @@
   <style>
     body { font-family: 'Inter', sans-serif; }
     .font-mono { font-family: 'JetBrains Mono', monospace; }
+    
+    /* Scrollbar styling for sleek dark mode */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
     @media print {
       body { background: white !important; color: black !important; }
       .no-print { display: none !important; }
@@ -43,11 +50,13 @@
     .print-only { display: none; }
   </style>
 </head>
-<body class="h-full flex flex-col min-h-screen overflow-x-hidden">
+<body class="h-full flex flex-col min-h-screen overflow-x-hidden bg-slate-900 text-slate-100">
 
-  <!-- Header / Navigation -->
-  <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-30 no-print">
+  <!-- STICKY TOP HEADER & NAVIGATION TOOLBAR -->
+  <header class="bg-slate-800/95 backdrop-blur-md border-b border-slate-700 sticky top-0 z-40 no-print shadow-xl">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Title -->
       <div class="flex items-center gap-3">
         <div class="bg-blue-600 text-white p-2 rounded-xl shadow-lg shadow-blue-500/20">
           <i data-lucide="car" class="w-6 h-6"></i>
@@ -55,44 +64,49 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">Vehicle Research Hub</h1>
-            <span class="bg-blue-900/80 text-blue-300 text-xs font-semibold px-2 py-0.5 rounded-full border border-blue-700/50">v1.4</span>
+            <span class="bg-blue-900/80 text-blue-300 text-xs font-semibold px-2 py-0.5 rounded-full border border-blue-700/50">v1.7.4</span>
           </div>
-          <p class="text-xs text-slate-400">CarMax Inventory Reconciliation & Lot Inspection Tracker</p>
+          <p class="text-xs text-slate-400">CarMax Inventory Reconciliation & Real-Time Lot Inspection</p>
         </div>
       </div>
 
-      <!-- Navigation & Mode Controls -->
-      <div class="flex items-center gap-2">
+      <!-- Navigation Views & Configuration Controls -->
+      <div class="flex items-center gap-2 flex-wrap">
         <div class="bg-slate-900 p-1 rounded-lg border border-slate-700 flex items-center">
-          <button id="btn-view-interactive" onclick="switchView('interactive')" class="px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-blue-600 text-white shadow">
-            <i data-lucide="layout-grid" class="w-3.5 h-3.5 inline mr-1"></i> Interactive App
+          <button id="nav-btn-interactive" onclick="navigateTo('interactive')" class="px-3.5 py-1.5 text-xs font-medium rounded-md transition-all bg-blue-600 text-white shadow">
+            <i data-lucide="layout-grid" class="w-3.5 h-3.5 inline mr-1.5"></i> Interactive App
           </button>
-          <button id="btn-view-report" onclick="switchView('report')" class="px-3 py-1.5 text-xs font-medium rounded-md text-slate-300 hover:text-white transition-all">
-            <i data-lucide="file-text" class="w-3.5 h-3.5 inline mr-1"></i> CarMax Report View
+          <button id="nav-btn-reports" onclick="navigateTo('reports')" class="px-3.5 py-1.5 text-xs font-medium rounded-md text-slate-300 hover:text-white transition-all">
+            <i data-lucide="file-text" class="w-3.5 h-3.5 inline mr-1.5"></i> Reports
           </button>
         </div>
 
+        <button onclick="toggleTagManagerModal()" class="p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition-all" title="Manage Research Tags">
+          <i data-lucide="tags" class="w-4 h-4 text-purple-400"></i>
+          <span class="hidden sm:inline">Manage Tags</span>
+        </button>
+
         <button onclick="toggleConfigModal()" class="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition-all">
-          <i data-lucide="database" class="w-4 h-4"></i>
-          <span class="hidden sm:inline" id="db-status-label">Mock Data Mode</span>
+          <i data-lucide="database" class="w-4 h-4 text-amber-400"></i>
+          <span class="hidden sm:inline">Local Mock Mode</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- MAIN INTERACTIVE APP VIEW -->
+  <!-- 1. MAIN INTERACTIVE APP VIEW -->
   <main id="view-interactive" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 no-print">
 
-    <!-- Search & Filter Controls Toolbar -->
+    <!-- Search & Dynamic Filter Controls Toolbar -->
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-3 sm:p-4 shadow-xl flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
       
-      <!-- Search Input Bar -->
+      <!-- Search Input -->
       <div class="relative flex-1">
         <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
         <input 
           type="text" 
           id="search-input" 
-          placeholder="Search stock #, year, description, VIN, location, status, code, or comments..." 
+          placeholder="Search stock #, year, description, VIN, location, status, tag, or notes..." 
           oninput="handleSearch(this.value)"
           class="w-full bg-slate-900 border border-slate-700 focus:border-blue-500 text-white text-sm rounded-xl pl-11 pr-10 py-2.5 outline-none transition-all placeholder:text-slate-500"
         >
@@ -101,15 +115,11 @@
         </button>
       </div>
 
-      <!-- Tag Filter Dropdown & Reset Sort Controls -->
+      <!-- Tag Filters & Reset Actions -->
       <div class="flex items-center gap-2 flex-wrap">
         <select id="filter-tag" onchange="handleFilterTag(this.value)" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none focus:border-blue-500">
           <option value="ALL">All Research Tags</option>
-          <option value="Priority Lead">Priority Lead</option>
-          <option value="Needs Inspection">Needs Inspection</option>
-          <option value="Pending Review">Pending Review</option>
-          <option value="Hold">Hold</option>
-          <option value="Archive">Archive</option>
+          <!-- Dynamic options populated via JS -->
         </select>
 
         <button onclick="resetSortOrder()" class="px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium rounded-xl flex items-center gap-1.5 transition-all">
@@ -119,7 +129,7 @@
 
         <button onclick="reloadSampleData()" class="px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium rounded-xl flex items-center gap-1.5 transition-all">
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-          <span>Reload Sample</span>
+          <span>Reset Data</span>
         </button>
 
         <button onclick="exportDataJSON()" class="px-3 py-2.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 text-xs font-medium rounded-xl flex items-center gap-1.5 transition-all">
@@ -140,42 +150,105 @@
       </div>
     </div>
 
-    <!-- Desktop Table Layout -->
-    <div class="hidden md:block bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead class="bg-slate-900/90 text-slate-300 font-semibold border-b border-slate-700 uppercase tracking-wider sticky top-0">
-            <tr>
-              <th onclick="sortTable('originalIndex')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800/80 transition-colors"># <span id="sort-icon-originalIndex"></span></th>
-              <th onclick="sortTable('stockNum')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800/80 transition-colors">Stock # <span id="sort-icon-stockNum"></span></th>
-              <th onclick="sortTable('year')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800/80 transition-colors">Year <span id="sort-icon-year"></span></th>
-              <th onclick="sortTable('vehicleDescription')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800/80 transition-colors">Description <span id="sort-icon-vehicleDescription"></span></th>
-              <th onclick="sortTable('lastScanLocation')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800/80 transition-colors">Location <span id="sort-icon-lastScanLocation"></span></th>
-              <th onclick="sortTable('zoneDescription')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800/80 transition-colors">Zone <span id="sort-icon-zoneDescription"></span></th>
-              <th onclick="sortTable('vin')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800/80 transition-colors">VIN <span id="sort-icon-vin"></span></th>
-              <th onclick="sortTable('productStatus')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800/80 transition-colors">Status <span id="sort-icon-productStatus"></span></th>
-              <th onclick="sortTable('code')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800/80 transition-colors">Research Tag <span id="sort-icon-code"></span></th>
-              <th onclick="sortTable('modifiedDate')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800/80 transition-colors">Modified <span id="sort-icon-modifiedDate"></span></th>
-              <th class="px-3 py-3.5 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="vehicle-table-body" class="divide-y divide-slate-700/60 font-medium">
-            <!-- Dynamic rows inserted here -->
-          </tbody>
-        </table>
-      </div>
+    <!-- FROZEN & STICKY TABLE DESKTOP CONTAINER -->
+    <div class="hidden md:block bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl relative max-h-[calc(100vh-250px)] overflow-y-auto">
+      <table class="w-full text-left text-xs border-collapse">
+        <!-- Sticky Table Header -->
+        <thead class="bg-slate-900/95 backdrop-blur-md text-slate-300 font-semibold border-b border-slate-700 uppercase tracking-wider sticky top-0 z-20 shadow-md">
+          <tr>
+            <th onclick="sortTable('originalIndex')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors"># <span id="sort-icon-originalIndex"></span></th>
+            <th onclick="sortTable('stockNum')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Stock # <span id="sort-icon-stockNum"></span></th>
+            <th onclick="sortTable('year')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Year <span id="sort-icon-year"></span></th>
+            <th onclick="sortTable('vehicleDescription')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Description <span id="sort-icon-vehicleDescription"></span></th>
+            <th onclick="sortTable('lastScanLocation')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Location <span id="sort-icon-lastScanLocation"></span></th>
+            <th onclick="sortTable('zoneDescription')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Zone <span id="sort-icon-zoneDescription"></span></th>
+            <th onclick="sortTable('vin')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">VIN <span id="sort-icon-vin"></span></th>
+            <th onclick="sortTable('productStatus')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Status <span id="sort-icon-productStatus"></span></th>
+            <th onclick="sortTable('code')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Research Tag <span id="sort-icon-code"></span></th>
+            <th onclick="sortTable('modifiedDate')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Modified <span id="sort-icon-modifiedDate"></span></th>
+            <th class="px-3 py-3.5 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="vehicle-table-body" class="divide-y divide-slate-700/60 font-medium">
+          <!-- Dynamic table rows rendered via JavaScript -->
+        </tbody>
+      </table>
     </div>
 
-    <!-- Mobile Touch Card List Layout -->
+    <!-- Mobile Touch Card List View -->
     <div id="mobile-card-container" class="md:hidden space-y-4">
-      <!-- Dynamic mobile cards inserted here -->
+      <!-- Dynamic mobile cards rendered via JavaScript -->
     </div>
 
   </main>
 
-  <!-- PRINTABLE CARMAX REPORT VIEW SIMULATOR -->
-  <div id="view-report" class="hidden max-w-6xl mx-auto my-6 p-6 bg-white text-black shadow-2xl rounded-xl">
-    <!-- Header -->
+  <!-- 2. REPORTS HUB PAGE -->
+  <main id="view-reports-hub" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 no-print">
+    <div class="border-b border-slate-700 pb-4">
+      <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+        <i data-lucide="file-text" class="w-6 h-6 text-blue-400"></i>
+        <span>CarMax Inventory Reports</span>
+      </h2>
+      <p class="text-sm text-slate-400 mt-1">Select an official inventory reconciliation report view format to preview, review notes, or generate print PDFs.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- Report View 1 Card -->
+      <div class="bg-slate-800 border border-slate-700 hover:border-blue-500/50 rounded-2xl p-6 space-y-4 shadow-xl transition-all flex flex-col justify-between">
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-mono font-semibold rounded-lg">Format 1</span>
+            <span class="text-xs text-slate-400 font-mono">Reconciliation Sheet</span>
+          </div>
+          <h3 class="text-lg font-bold text-white">CarMax Report View 1</h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Standard CarMax inventory reconciliation layout grouped by zone status. Includes stock number, scan location, vehicle description, VIN, status, and <strong>Research Notes</strong>.
+          </p>
+        </div>
+        <button onclick="navigateTo('report1')" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/20">
+          <span>Open Report View 1</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Report View 2 Card -->
+      <div class="bg-slate-800 border border-slate-700 hover:border-purple-500/50 rounded-2xl p-6 space-y-4 shadow-xl transition-all flex flex-col justify-between">
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-1 bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xs font-mono font-semibold rounded-lg">Format 2</span>
+            <span class="text-xs text-slate-400 font-mono">Tag Classification</span>
+          </div>
+          <h3 class="text-lg font-bold text-white">CarMax Report View 2</h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Maintains all standard inventory reconciliation columns, but replaces the Research Notes column with the dynamic <strong>Research Tag</strong> classification badge.
+          </p>
+        </div>
+        <button onclick="navigateTo('report2')" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-600/20">
+          <span>Open Report View 2</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 3. CARMAX REPORT VIEW 1 CONTAINER -->
+  <div id="view-report-1" class="hidden max-w-6xl mx-auto my-6 p-6 sm:p-8 bg-white text-black shadow-2xl rounded-xl">
+    <!-- Action Bar -->
+    <div class="mb-4 pb-3 border-b border-slate-300 flex justify-between items-center text-xs no-print">
+      <button onclick="navigateTo('reports')" class="px-3 py-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 flex items-center gap-1.5">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back to Reports
+      </button>
+      <div class="flex items-center gap-2">
+        <span class="font-mono text-slate-500 font-bold">Report Format: Research Notes</span>
+        <button onclick="window.print()" class="px-3.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 font-medium flex items-center gap-1.5">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print / Save PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- Official Header -->
     <div class="border-b-2 border-black pb-3 mb-4 flex justify-between items-start">
       <div>
         <div class="flex items-center gap-2">
@@ -186,24 +259,53 @@
       </div>
       <div class="text-right text-xs font-mono">
         <p class="font-bold">Inventory Reconciliation Report</p>
-        <p>Report Date: 09/21/26 3:06 PM</p>
+        <p>Report Date: 09/23/26 10:15 AM</p>
         <p>Location Number: 4070</p>
         <p>Page: 1 of 10</p>
       </div>
     </div>
 
-    <!-- Report Sections Render -->
-    <div id="report-content" class="space-y-6 text-xs font-mono">
-      <!-- Generated dynamic report sections -->
-    </div>
-
-    <div class="mt-8 pt-4 border-t border-slate-300 flex justify-between items-center text-xs text-slate-500 no-print">
-      <button onclick="switchView('interactive')" class="px-4 py-2 bg-slate-800 text-white rounded-lg">Return to Interactive App</button>
-      <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded-lg"><i data-lucide="printer" class="w-4 h-4 inline mr-1"></i> Print / Save PDF</button>
-    </div>
+    <!-- Dynamic Content -->
+    <div id="report-1-content" class="space-y-6 text-xs font-mono"></div>
   </div>
 
-  <!-- MOBILE-OPTIMIZED EDIT RESEARCH NOTES MODAL (v1.4) -->
+  <!-- 4. CARMAX REPORT VIEW 2 CONTAINER -->
+  <div id="view-report-2" class="hidden max-w-6xl mx-auto my-6 p-6 sm:p-8 bg-white text-black shadow-2xl rounded-xl">
+    <!-- Action Bar -->
+    <div class="mb-4 pb-3 border-b border-slate-300 flex justify-between items-center text-xs no-print">
+      <button onclick="navigateTo('reports')" class="px-3 py-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 flex items-center gap-1.5">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back to Reports
+      </button>
+      <div class="flex items-center gap-2">
+        <span class="font-mono text-slate-500 font-bold">Report Format: Research Tags</span>
+        <button onclick="window.print()" class="px-3.5 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-500 font-medium flex items-center gap-1.5">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print / Save PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- Official Header -->
+    <div class="border-b-2 border-black pb-3 mb-4 flex justify-between items-start">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-2xl font-black tracking-tight text-blue-900">CarMax</span>
+          <span class="text-xs border border-black px-1 font-semibold">RECON CIL</span>
+        </div>
+        <p class="text-xs font-mono mt-1">Sorted by Last Scan Location and Stock Num</p>
+      </div>
+      <div class="text-right text-xs font-mono">
+        <p class="font-bold">Inventory Reconciliation Report (Tags)</p>
+        <p>Report Date: 09/23/26 10:15 AM</p>
+        <p>Location Number: 4070</p>
+        <p>Page: 1 of 10</p>
+      </div>
+    </div>
+
+    <!-- Dynamic Content -->
+    <div id="report-2-content" class="space-y-6 text-xs font-mono"></div>
+  </div>
+
+  <!-- EDIT VEHICLE RESEARCH NOTES & TAG MODAL -->
   <div id="edit-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-[calc(100vw-1.5rem)] sm:max-w-lg overflow-hidden shadow-2xl my-auto">
       
@@ -212,7 +314,7 @@
         <div class="min-w-0 flex-1">
           <h3 class="font-bold text-white flex items-center gap-2 text-sm sm:text-base">
             <i data-lucide="edit-3" class="w-4 h-4 text-blue-400 shrink-0"></i>
-            <span class="truncate">Edit Research Notes</span>
+            <span class="truncate">Edit Research Notes & Tags</span>
           </h3>
           <p id="modal-vehicle-subtitle" class="text-xs text-slate-400 mt-0.5 font-mono truncate">Stock # ------</p>
         </div>
@@ -222,7 +324,7 @@
       <!-- Modal Body -->
       <div class="p-4 sm:p-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
         
-        <!-- Mobile Portrait Auto-Wrapping Context Card -->
+        <!-- Context Vehicle Info Card -->
         <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 space-y-2">
           <div class="flex flex-wrap items-center justify-between gap-1.5">
             <div id="modal-vehicle-title" class="text-white font-bold text-xs sm:text-sm leading-snug break-words max-w-full">---</div>
@@ -234,23 +336,23 @@
           </div>
         </div>
 
-        <!-- Research Tag Selector -->
+        <!-- Research Tag Selector with In-Modal Tag Management Trigger -->
         <div>
-          <label class="block text-slate-300 font-medium mb-1.5">Research Tag / Code</label>
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="block text-slate-300 font-medium">Research Tag / Classification</label>
+            <button onclick="toggleTagManagerModal()" class="text-[11px] text-purple-400 hover:text-purple-300 flex items-center gap-1 transition-colors">
+              <i data-lucide="plus-circle" class="w-3 h-3"></i> Add / Manage Tags
+            </button>
+          </div>
           <select id="modal-code" class="w-full bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm rounded-xl p-2.5 outline-none focus:border-blue-500">
-            <option value="Unassigned">Unassigned</option>
-            <option value="Priority Lead">Priority Lead</option>
-            <option value="Needs Inspection">Needs Inspection</option>
-            <option value="Pending Review">Pending Review</option>
-            <option value="Hold">Hold</option>
-            <option value="Archive">Archive</option>
+            <!-- Dynamically populated options -->
           </select>
         </div>
 
         <!-- Comments Textarea -->
         <div>
-          <label class="block text-slate-300 font-medium mb-1.5">Research Comments & Inspection Notes</label>
-          <textarea id="modal-comments" rows="4" placeholder="Enter evaluation details, pricing notes, lot condition, or inspection status..." class="w-full bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm rounded-xl p-3 outline-none focus:border-blue-500 placeholder:text-slate-500 min-h-[100px] resize-y"></textarea>
+          <label class="block text-slate-300 font-medium mb-1.5">Research Comments & Lot Notes</label>
+          <textarea id="modal-comments" rows="4" placeholder="Enter vehicle condition details, lot placement notes, or evaluation status..." class="w-full bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm rounded-xl p-3 outline-none focus:border-blue-500 placeholder:text-slate-500 min-h-[100px] resize-y"></textarea>
         </div>
       </div>
 
@@ -264,31 +366,85 @@
     </div>
   </div>
 
-  <!-- CONFIG MODAL -->
-  <div id="config-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-5 space-y-4">
-      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-        <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="settings" class="w-4 h-4 text-blue-400"></i> Database Mode</h3>
-        <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+  <!-- RESEARCH TAG MANAGER MODAL -->
+  <div id="tag-manager-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-[calc(100vw-1.5rem)] sm:max-w-lg overflow-hidden shadow-2xl my-auto">
+      <div class="p-4 bg-slate-900 border-b border-slate-700 flex justify-between items-center">
+        <h3 class="font-bold text-white flex items-center gap-2 text-sm sm:text-base">
+          <i data-lucide="tags" class="w-4 h-4 text-purple-400"></i>
+          <span>Manage Research Tags</span>
+        </h3>
+        <button onclick="toggleTagManagerModal()" class="p-1 text-slate-400 hover:text-white rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
-      <p class="text-xs text-slate-300">
-        By default, application runs in <strong>Local Storage Mock Mode</strong> with all 38 CarMax inventory records loaded. 
-      </p>
-      <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 text-xs text-slate-400 space-y-2">
-        <div class="flex items-center justify-between text-white font-medium">
-          <span>Current Engine:</span>
-          <span class="text-amber-400">Browser Local Storage</span>
+
+      <div class="p-4 sm:p-5 space-y-4 text-xs">
+        <!-- Add New Tag Form -->
+        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700 space-y-3">
+          <h4 class="font-semibold text-slate-200">Add New Custom Tag</h4>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="text" id="new-tag-name" placeholder="Tag Name (e.g. Needs Inspection)" class="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg p-2 outline-none focus:border-purple-500">
+            <select id="new-tag-color" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg p-2 outline-none">
+              <option value="purple">Purple Theme</option>
+              <option value="rose">Rose Theme</option>
+              <option value="amber">Amber Theme</option>
+              <option value="blue">Blue Theme</option>
+              <option value="emerald">Emerald Theme</option>
+              <option value="slate">Gray Theme</option>
+            </select>
+            <button onclick="addNewTag()" class="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg shrink-0">Add Tag</button>
+          </div>
         </div>
-        <p>Firebase integration can be attached by initializing your Firebase config object in the project deployment scripts.</p>
+
+        <!-- Tag List -->
+        <div class="space-y-2">
+          <h4 class="font-semibold text-slate-300">Existing Tags</h4>
+          <div id="tag-list-container" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+            <!-- Dynamic tag entries -->
+          </div>
+        </div>
       </div>
-      <div class="flex justify-end">
-        <button onclick="toggleConfigModal()" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold">Done</button>
+
+      <div class="p-3 sm:p-4 bg-slate-900/80 border-t border-slate-700 flex justify-end">
+        <button onclick="toggleTagManagerModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- APPLICATION LOGIC JS -->
+  <!-- CONFIG MODAL -->
+  <div id="config-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="settings" class="w-4 h-4 text-blue-400"></i> Database Storage Mode</h3>
+        <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        The application is currently operating in <strong>Local Storage Mock Mode</strong>. All vehicle evaluation records and custom research tags persist directly in your browser's local memory.
+      </p>
+      <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 text-xs text-slate-400 space-y-2">
+        <div class="flex items-center justify-between text-white font-medium">
+          <span>Storage Engine:</span>
+          <span class="text-amber-400">Browser LocalStorage</span>
+        </div>
+        <p>Changes are immediately persistent across page refreshes.</p>
+      </div>
+      <div class="flex justify-end">
+        <button onclick="toggleConfigModal()" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC & DATASET -->
   <script>
+    // DEFAULT RESEARCH TAG PRESETS
+    const DEFAULT_TAGS = [
+      { id: 'Unassigned', name: 'Unassigned', color: 'slate' },
+      { id: 'Priority Lead', name: 'Priority Lead', color: 'purple' },
+      { id: 'Needs Inspection', name: 'Needs Inspection', color: 'rose' },
+      { id: 'Pending Review', name: 'Pending Review', color: 'amber' },
+      { id: 'Hold', name: 'Hold', color: 'blue' },
+      { id: 'Archive', name: 'Archive', color: 'slate' }
+    ];
+
     // FULL 38-RECORD CARMAX INVENTORY SOURCE DATASET
     const FULL_CARMAX_DATASET = [
       // Section 1: IN-TRANSIT VEHICLES (16 records)
@@ -304,7 +460,7 @@
       { stockNum: "70254205", year: "2007", vehicleDescription: "TOYOTA CAMRY HYBRID 4D SEDAN (no trim)", lastScanDate: "9/21/26", lastScanLocation: "WZA178", zoneDescription: "WHOLESALE ZONE A", daysInZone: "3", color: "SILVER", vin: "4T1BB46K470020169", productStatus: "IN-TRANSIT", daysInStatus: "3", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "Battery check needed.", code: "Needs Inspection" },
       { stockNum: "28867021", year: "2018", vehicleDescription: "SUBARU CROSSTREK 4D SPORT UTILIT PREMIU", lastScanDate: "9/21/26", lastScanLocation: "WZA189", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLUE", vin: "JF2GTABC5JH333477", productStatus: "IN-TRANSIT", daysInStatus: "1", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "", code: "Unassigned" },
       { stockNum: "70224908", year: "2014", vehicleDescription: "FORD FUSION 4D SEDAN SE", lastScanDate: "9/21/26", lastScanLocation: "WZD16", zoneDescription: "WHOLESALE ZONE D", daysInZone: "0", color: "BLACK", vin: "1FA6P0HD1E5404602", productStatus: "IN-TRANSIT", daysInStatus: "3", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70064438", year: "2006", vehicleDescription: "TOYOTA HIGHLANDER 4D SPORT UTILIT (no trin)", lastScanDate: "9/15/26", lastScanLocation: "WZD2", zoneDescription: "WHOLESALE ZONE D", daysInZone: "17", color: "GREEN", vin: "JTEEP21A560179449", productStatus: "IN-TRANSIT", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "High days in zone (17 days). Check lot placement.", code: "Hold" },
+      { stockNum: "70064438", year: "2006", vehicleDescription: "TOYOTA HIGHLANDER 4D SPORT UTILIT (no trin)", lastScanDate: "9/15/26", lastScanLocation: "WZD2", zoneDescription: "WHOLESALE ZONE D", daysInZone: "17", color: "GREEN", vin: "JTEEP21A560179449", productStatus: "IN-TRANSIT", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "High days in zone (17 days). Check Lot placement.", code: "Hold" },
       { stockNum: "70244828", year: "2016", vehicleDescription: "LEXUS IS 300 4D SEDAN (no trim)", lastScanDate: "9/21/26", lastScanLocation: "WZF42", zoneDescription: "WHOLESALE ZONE F", daysInZone: "3", color: "SILVER", vin: "JTHCM1D20G5006296", productStatus: "IN-TRANSIT", daysInStatus: "3", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "", code: "Unassigned" },
       { stockNum: "28927932", year: "2002", vehicleDescription: "FORD F250 4D EXTENDED CAB XLT", lastScanDate: "9/21/26", lastScanLocation: "WZ16", zoneDescription: "ARBITRATION", daysInZone: "4", color: "RED", vin: "1FTNX20L52EB03170", productStatus: "IN-TRANSIT", daysInStatus: "4", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "In arbitration zone.", code: "Hold" },
       { stockNum: "28866880", year: "2020", vehicleDescription: "MERCEDES-BENZ GLC300 4D SPORT UTILIT (no", lastScanDate: "9/21/26", lastScanLocation: "WZN25", zoneDescription: "NO RUNNER WALL", daysInZone: "3", color: "BLACK", vin: "W1N0G8EB4LF842810", productStatus: "IN-TRANSIT", daysInStatus: "7", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "", code: "Unassigned" },
@@ -312,7 +468,7 @@
       // Section 2: SOLD VEHICLES (22 records)
       { stockNum: "70239510", year: "2017", vehicleDescription: "MAZDA CX-5 4D SPORT UTILIT GRAND TOURING", lastScanDate: "9/21/26", lastScanLocation: "WZA10", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLUE", vin: "JM3KFBDL8H0174313", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "Sold wholesale. Pending dealer pickup.", code: "Archive" },
       { stockNum: "70246902", year: "2011", vehicleDescription: "NISSAN ROGUE 4D SPORT UTILIT S", lastScanDate: "9/21/26", lastScanLocation: "WZA100", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "GRAY", vin: "JN8AS5MV2BW670249", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Archive" },
-      { stockNum: "70237351", year: "2015", vehicleDescription: "NISSAN SENTRA 4D SEDAN SV", lastScanDate: "9/21/26", lastScanLocation: "WZA101", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLACK", vin: "3N1AB7AP0FL655700", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "Keys delivered to auction lane.", code: "Hold" },
+      { stockNum: "70237351", year: "2015", vehicleDescription: "NISSAN SENTRA 4D SEDAN SV", lastScanDate: "9/21/26", lastScanLocation: "WZA101", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLACK", vin: "3N1AB7AP0FL655700", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "Keys delivered to auction Lane.", code: "Hold" },
       { stockNum: "70252438", year: "2015", vehicleDescription: "CADILLAC SRX 4D SPORT UTILIT LUXURY", lastScanDate: "9/21/26", lastScanLocation: "WZA103", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLUE", vin: "3GYFNEE37FS628810", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
       { stockNum: "29175583", year: "2024", vehicleDescription: "NISSAN SENTRA 4D SEDAN S", lastScanDate: "9/21/26", lastScanLocation: "WZA104", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "WHITE", vin: "3N1AB8BV8RY245768", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
       { stockNum: "28122460", year: "2014", vehicleDescription: "FORD EXPLORER 4D SPORT UTILIT XLT", lastScanDate: "9/21/26", lastScanLocation: "WZA107", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BURGUNDY", vin: "1FM5K8D81EGA67957", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
@@ -334,7 +490,8 @@
       { stockNum: "29176316", year: "2020", vehicleDescription: "VOLVO XC60 PLUG-IN HYBRID 4D SPORT UTILIT", lastScanDate: "9/21/26", lastScanLocation: "WZA153", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "GRAY", vin: "YV4BK0DP2L1468169", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" }
     ];
 
-    // STATE MANAGEMENT
+    // APPLICATION STATE
+    let tagsState = [];
     let vehiclesState = [];
     let filteredVehicles = [];
     let currentSortColumn = 'originalIndex';
@@ -346,21 +503,43 @@
     // INITIALIZATION
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
+      initTags();
       initDataStore();
     });
 
-    function initDataStore() {
-      const stored = localStorage.getItem('carmax_research_vehicles_v1.4');
+    function initTags() {
+      const stored = localStorage.getItem('carmax_research_tags_v1.7');
       if (stored) {
-        try {
-          vehiclesState = JSON.parse(stored);
-        } catch (e) {
-          vehiclesState = loadDefaultDataset();
-        }
+        try { tagsState = JSON.parse(stored); } catch(e) { tagsState = DEFAULT_TAGS; }
+      } else {
+        tagsState = DEFAULT_TAGS;
+        localStorage.setItem('carmax_research_tags_v1.7', JSON.stringify(tagsState));
+      }
+      renderTagDropdowns();
+    }
+
+    function renderTagDropdowns() {
+      const filterSelect = document.getElementById('filter-tag');
+      const modalSelect = document.getElementById('modal-code');
+
+      filterSelect.innerHTML = `<option value="ALL">All Research Tags</option>`;
+      modalSelect.innerHTML = ``;
+
+      tagsState.forEach(tag => {
+        filterSelect.innerHTML += `<option value="${tag.name}">${tag.name}</option>`;
+        modalSelect.innerHTML += `<option value="${tag.name}">${tag.name}</option>`;
+      });
+
+      filterSelect.value = activeTagFilter;
+    }
+
+    function initDataStore() {
+      const stored = localStorage.getItem('carmax_research_vehicles_v1.7');
+      if (stored) {
+        try { vehiclesState = JSON.parse(stored); } catch (e) { vehiclesState = loadDefaultDataset(); }
       } else {
         vehiclesState = loadDefaultDataset();
       }
-
       applyFiltersAndSort();
     }
 
@@ -373,7 +552,7 @@
         code: item.code || "Unassigned",
         modifiedDate: item.comments || item.code !== "Unassigned" ? "Sep 21, 10:30 AM" : "Sep 21, 08:00 AM"
       }));
-      localStorage.setItem('carmax_research_vehicles_v1.4', JSON.stringify(formatted));
+      localStorage.setItem('carmax_research_vehicles_v1.7', JSON.stringify(formatted));
       return formatted;
     }
 
@@ -384,15 +563,82 @@
       }
     }
 
-    // FILTERING & SEARCH
+    // TAG MANAGER ACTIONS
+    function toggleTagManagerModal() {
+      const modal = document.getElementById('tag-manager-modal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        renderTagManagerList();
+      }
+    }
+
+    function renderTagManagerList() {
+      const container = document.getElementById('tag-list-container');
+      container.innerHTML = '';
+
+      tagsState.forEach((tag) => {
+        const div = document.createElement('div');
+        div.className = "flex items-center justify-between bg-slate-900 p-2.5 rounded-xl border border-slate-700/80 gap-2";
+        div.innerHTML = `
+          <div class="flex items-center gap-2">
+            ${getResearchTagBadge(tag.name)}
+            <span class="text-xs text-slate-400 font-mono">(${tag.color})</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="deleteTag('${tag.name}')" class="p-1 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors" title="Delete Tag">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      lucide.createIcons();
+    }
+
+    function addNewTag() {
+      const nameInput = document.getElementById('new-tag-name');
+      const colorSelect = document.getElementById('new-tag-color');
+      const name = nameInput.value.trim();
+      const color = colorSelect.value;
+
+      if (!name) { alert("Please enter a valid tag name."); return; }
+      if (tagsState.some(t => t.name.toLowerCase() === name.toLowerCase())) { alert("A tag with this name already exists."); return; }
+
+      tagsState.push({ id: name, name: name, color: color });
+      localStorage.setItem('carmax_research_tags_v1.7', JSON.stringify(tagsState));
+      nameInput.value = '';
+
+      renderTagDropdowns();
+      renderTagManagerList();
+      applyFiltersAndSort();
+    }
+
+    function deleteTag(tagName) {
+      if (tagName === 'Unassigned') { alert("The 'Unassigned' tag cannot be deleted."); return; }
+
+      if (confirm(`Delete tag "${tagName}"? Vehicles currently tagged as "${tagName}" will be reassigned to "Unassigned".`)) {
+        tagsState = tagsState.filter(t => t.name !== tagName);
+        localStorage.setItem('carmax_research_tags_v1.7', JSON.stringify(tagsState));
+
+        vehiclesState.forEach(v => {
+          if (v.code === tagName) v.code = 'Unassigned';
+        });
+        localStorage.setItem('carmax_research_vehicles_v1.7', JSON.stringify(vehiclesState));
+
+        if (activeTagFilter === tagName) activeTagFilter = 'ALL';
+
+        renderTagDropdowns();
+        renderTagManagerList();
+        applyFiltersAndSort();
+      }
+    }
+
+    // SEARCH & FILTERING
     function handleSearch(term) {
       activeSearchTerm = term.toLowerCase().trim();
       const clearBtn = document.getElementById('search-clear-btn');
-      if (activeSearchTerm) {
-        clearBtn.classList.remove('hidden');
-      } else {
-        clearBtn.classList.add('hidden');
-      }
+      if (activeSearchTerm) clearBtn.classList.remove('hidden');
+      else clearBtn.classList.add('hidden');
       applyFiltersAndSort();
     }
 
@@ -446,7 +692,7 @@
       renderUI();
     }
 
-    // SORTING CONTROLS
+    // SORT CONTROLS
     function sortTable(columnKey) {
       if (currentSortColumn === columnKey) {
         currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
@@ -463,11 +709,10 @@
       applyFiltersAndSort();
     }
 
-    // RENDER LOGIC
+    // RENDER UI
     function renderUI() {
       document.getElementById('record-count').innerText = filteredVehicles.length;
       
-      // Update Sort Badge Indicator
       const badge = document.getElementById('sort-indicator-badge');
       if (currentSortColumn === 'originalIndex') {
         badge.innerText = 'Sort: Original Order';
@@ -477,16 +722,16 @@
         badge.className = 'ml-2 bg-blue-900/60 text-blue-300 px-2 py-0.5 rounded border border-blue-700/50';
       }
 
-      // Render Desktop Table
+      // Render Desktop Table Body
       const tbody = document.getElementById('vehicle-table-body');
       tbody.innerHTML = '';
 
       if (filteredVehicles.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-400">No matching vehicles found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-400">No matching vehicle records found.</td></tr>`;
       } else {
         filteredVehicles.forEach(v => {
           const row = document.createElement('tr');
-          row.className = "hover:bg-slate-700/30 transition-colors";
+          row.className = "hover:bg-slate-700/30 transition-colors border-b border-slate-700/40";
 
           const statusBg = v.productStatus === 'IN-TRANSIT' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
 
@@ -558,25 +803,31 @@
         cardContainer.appendChild(card);
       });
 
-      renderReportView();
+      renderReportViews();
       lucide.createIcons();
     }
 
     function getResearchTagBadge(code) {
-      switch(code) {
-        case 'Priority Lead': return `<span class="px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-[10px] font-bold inline-block">Priority Lead</span>`;
-        case 'Needs Inspection': return `<span class="px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded text-[10px] font-bold inline-block">Needs Inspection</span>`;
-        case 'Pending Review': return `<span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] font-bold inline-block">Pending Review</span>`;
-        case 'Hold': return `<span class="px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded text-[10px] font-bold inline-block">Hold</span>`;
-        case 'Archive': return `<span class="px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-[10px] font-bold inline-block">Archive</span>`;
-        default: return `<span class="px-2 py-0.5 bg-slate-800 text-slate-500 border border-slate-700 rounded text-[10px] inline-block">Unassigned</span>`;
+      const tagObj = tagsState.find(t => t.name === code);
+      const theme = tagObj ? tagObj.color : 'slate';
+
+      switch(theme) {
+        case 'purple': return `<span class="px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-[10px] font-bold inline-block">${code}</span>`;
+        case 'rose': return `<span class="px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded text-[10px] font-bold inline-block">${code}</span>`;
+        case 'amber': return `<span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] font-bold inline-block">${code}</span>`;
+        case 'blue': return `<span class="px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded text-[10px] font-bold inline-block">${code}</span>`;
+        case 'emerald': return `<span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded text-[10px] font-bold inline-block">${code}</span>`;
+        default: return `<span class="px-2 py-0.5 bg-slate-800 text-slate-300 border border-slate-700 rounded text-[10px] font-medium inline-block">${code}</span>`;
       }
     }
 
-    // PRINTABLE REPORT VIEW SIMULATOR
-    function renderReportView() {
-      const container = document.getElementById('report-content');
-      container.innerHTML = '';
+    // RENDER CARMAX REPORTS 1 & 2
+    function renderReportViews() {
+      const container1 = document.getElementById('report-1-content');
+      const container2 = document.getElementById('report-2-content');
+
+      container1.innerHTML = '';
+      container2.innerHTML = '';
 
       const sections = {};
       filteredVehicles.forEach(v => {
@@ -586,10 +837,12 @@
       });
 
       for (const [secTitle, items] of Object.entries(sections)) {
-        const secEl = document.createElement('div');
-        secEl.className = "border border-black p-3 space-y-2";
-        secEl.innerHTML = `
-          <h4 class="font-bold border-b border-black pb-1 uppercase">${secTitle}</h4>
+        
+        // Report Format 1 (Research Notes Column)
+        const secEl1 = document.createElement('div');
+        secEl1.className = "border border-black p-3 space-y-2";
+        secEl1.innerHTML = `
+          <h4 class="font-bold border-b border-black pb-1 uppercase tracking-tight">${secTitle}</h4>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-[10px]">
               <thead>
@@ -620,16 +873,90 @@
                     <td>${item.productStatus}</td>
                     <td class="italic">${item.comments || '-'}</td>
                   </tr>
-                `).map(row => row).join('')}
+                `).join('')}
               </tbody>
             </table>
           </div>
         `;
-        container.appendChild(secEl);
+        container1.appendChild(secEl1);
+
+        // Report Format 2 (Research Tag Column)
+        const secEl2 = document.createElement('div');
+        secEl2.className = "border border-black p-3 space-y-2";
+        secEl2.innerHTML = `
+          <h4 class="font-bold border-b border-black pb-1 uppercase tracking-tight">${secTitle}</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-[10px]">
+              <thead>
+                <tr class="border-b border-slate-400">
+                  <th class="py-1">Stock Num</th>
+                  <th>Year</th>
+                  <th>Vehicle Description</th>
+                  <th>Last Scan Date</th>
+                  <th>Scan Loc</th>
+                  <th>Zone Description</th>
+                  <th>Color</th>
+                  <th>VIN</th>
+                  <th>Status</th>
+                  <th>Research Tag</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200">
+                ${items.map(item => `
+                  <tr>
+                    <td class="py-1 font-bold">${item.stockNum}</td>
+                    <td>${item.year}</td>
+                    <td>${item.vehicleDescription}</td>
+                    <td>${item.lastScanDate}</td>
+                    <td>${item.lastScanLocation}</td>
+                    <td>${item.zoneDescription}</td>
+                    <td>${item.color}</td>
+                    <td>${item.vin}</td>
+                    <td>${item.productStatus}</td>
+                    <td class="font-semibold text-purple-900">${item.code || 'Unassigned'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+        container2.appendChild(secEl2);
       }
     }
 
-    // EDIT MODAL ACTIONS (v1.4 Mobile Portrait Optimization)
+    // PAGE NAVIGATION LOGIC
+    function navigateTo(targetView) {
+      const vInteractive = document.getElementById('view-interactive');
+      const vReportsHub = document.getElementById('view-reports-hub');
+      const vReport1 = document.getElementById('view-report-1');
+      const vReport2 = document.getElementById('view-report-2');
+
+      const btnInteractive = document.getElementById('nav-btn-interactive');
+      const btnReports = document.getElementById('nav-btn-reports');
+
+      // Hide all
+      [vInteractive, vReportsHub, vReport1, vReport2].forEach(el => el.classList.add('hidden'));
+
+      if (targetView === 'interactive') {
+        vInteractive.classList.remove('hidden');
+        btnInteractive.className = "px-3.5 py-1.5 text-xs font-medium rounded-md transition-all bg-blue-600 text-white shadow";
+        btnReports.className = "px-3.5 py-1.5 text-xs font-medium rounded-md text-slate-300 hover:text-white transition-all";
+      } else if (targetView === 'reports') {
+        vReportsHub.classList.remove('hidden');
+        btnReports.className = "px-3.5 py-1.5 text-xs font-medium rounded-md transition-all bg-blue-600 text-white shadow";
+        btnInteractive.className = "px-3.5 py-1.5 text-xs font-medium rounded-md text-slate-300 hover:text-white transition-all";
+      } else if (targetView === 'report1') {
+        vReport1.classList.remove('hidden');
+        btnReports.className = "px-3.5 py-1.5 text-xs font-medium rounded-md transition-all bg-blue-600 text-white shadow";
+        btnInteractive.className = "px-3.5 py-1.5 text-xs font-medium rounded-md text-slate-300 hover:text-white transition-all";
+      } else if (targetView === 'report2') {
+        vReport2.classList.remove('hidden');
+        btnReports.className = "px-3.5 py-1.5 text-xs font-medium rounded-md transition-all bg-blue-600 text-white shadow";
+        btnInteractive.className = "px-3.5 py-1.5 text-xs font-medium rounded-md text-slate-300 hover:text-white transition-all";
+      }
+    }
+
+    // EDIT MODAL LOGIC
     function openEditModal(stockNum) {
       activeEditingStockNum = stockNum;
       const vehicle = vehiclesState.find(v => v.stockNum === stockNum);
@@ -659,35 +986,13 @@
         vehicle.comments = document.getElementById('modal-comments').value.trim();
         vehicle.code = document.getElementById('modal-code').value;
         
-        // Auto Update Modified Date Timestamp
         const now = new Date();
         vehicle.modifiedDate = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + 
                               now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-        // Save State
-        localStorage.setItem('carmax_research_vehicles_v1.4', JSON.stringify(vehiclesState));
+        localStorage.setItem('carmax_research_vehicles_v1.7', JSON.stringify(vehiclesState));
         applyFiltersAndSort();
         closeEditModal();
-      }
-    }
-
-    // VIEW SWITCHER
-    function switchView(viewName) {
-      const interactiveView = document.getElementById('view-interactive');
-      const reportView = document.getElementById('view-report');
-      const btnInteractive = document.getElementById('btn-view-interactive');
-      const btnReport = document.getElementById('btn-view-report');
-
-      if (viewName === 'interactive') {
-        interactiveView.classList.remove('hidden');
-        reportView.classList.add('hidden');
-        btnInteractive.className = "px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-blue-600 text-white shadow";
-        btnReport.className = "px-3 py-1.5 text-xs font-medium rounded-md text-slate-300 hover:text-white transition-all";
-      } else {
-        interactiveView.classList.add('hidden');
-        reportView.classList.remove('hidden');
-        btnReport.className = "px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-blue-600 text-white shadow";
-        btnInteractive.className = "px-3 py-1.5 text-xs font-medium rounded-md text-slate-300 hover:text-white transition-all";
       }
     }
 
@@ -696,10 +1001,14 @@
     }
 
     function exportDataJSON() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(vehiclesState, null, 2));
+      const exportPayload = {
+        tags: tagsState,
+        vehicles: vehiclesState
+      };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `carmax_vehicle_research_v1.4_${new Date().toISOString().slice(0,10)}.json`);
+      downloadAnchor.setAttribute("download", `carmax_vehicle_research_v1.7.4_${new Date().toISOString().slice(0,10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
