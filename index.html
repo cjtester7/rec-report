@@ -3,217 +3,151 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rec Report - v1.8.1</title>
-  <style>
-    :root {
-      --bg-color: #f4f6f8;
-      --card-bg: #ffffff;
-      --primary: #05edf5;
-      --primary-dark: #029aaa;
-      --text: #222222;
-      --border: #cccccc;
-      --danger: #ff4d4d;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text);
-      margin: 0;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      border-bottom: 2px solid var(--border);
-      padding-bottom: 10px;
-    }
-
-    .version-tag {
-      background-color: #e0e0e0;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      font-weight: bold;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-
-    .form-group {
-      margin-bottom: 15px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 600;
-    }
-
-    input, textarea, select {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      box-sizing: border-box;
-      font-size: 1rem;
-    }
-
-    .btn-group {
-      display: flex;
-      gap: 10px;
-    }
-
-    button {
-      padding: 10px 16px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 0.95rem;
-    }
-
-    .btn-primary {
-      background-color: var(--primary);
-      color: #000;
-    }
-
-    .btn-primary:hover {
-      background-color: var(--primary-dark);
-      color: #fff;
-    }
-
-    .btn-cancel {
-      background-color: #888888;
-      color: #fff;
-    }
-
-    .btn-danger {
-      background-color: var(--danger);
-      color: #fff;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-
-    th, td {
-      text-align: left;
-      padding: 12px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    th {
-      background-color: #f0f0f0;
-    }
-
-    .status-badge {
-      font-size: 0.85rem;
-      color: #008000;
-      font-weight: bold;
-    }
-
-    .status-badge.offline {
-      color: var(--danger);
-    }
-  </style>
+  <title>CarMax Vehicle Research Hub v1.8</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Firebase v10 Compat SDKs (App & Firestore) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen text-gray-800 font-sans pb-12">
 
-  <div class="container">
-    <header>
-      <h2>Rec Report</h2>
+  <!-- Header Section -->
+  <header class="bg-slate-900 text-white shadow-lg py-6 px-4 sm:px-8 mb-8 border-b-4 border-blue-600">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
       <div>
-        <span id="connection-status" class="status-badge">Initializing Firebase...</span>
-        <span class="version-tag">v1.8.1</span>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-3">
+          <i class="fa-solid font-bold text-blue-400 fa-car"></i> CarMax Vehicle Research Hub
+          <span class="bg-blue-600 text-xs px-2.5 py-1 rounded-full font-mono font-medium">v1.8</span>
+        </h1>
+        <p class="text-slate-400 text-sm mt-1">Track, filter, and add personalized notes to target inventory.</p>
       </div>
-    </header>
+      
+      <!-- Realtime Database Status Badge -->
+      <div id="sync-status" class="flex items-center gap-2 text-xs bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" id="status-indicator"></span>
+        <span id="status-text" class="text-slate-300 font-medium">Initializing Connection...</span>
+      </div>
+    </div>
+  </header>
 
-    <!-- Form Section -->
-    <div class="card">
-      <h3 id="form-title">Add New Record</h3>
-      <form id="rec-form">
-        <input type="hidden" id="record-id">
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-8">
+
+    <!-- Filter and Search Bar -->
+    <div class="bg-white p-5 rounded-xl shadow-md border border-gray-200 mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <div class="form-group">
-          <label for="title">Title / Item Name</label>
-          <input type="text" id="title" required placeholder="e.g. Vehicle Inspection Report">
+        <!-- Search Input -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Search</label>
+          <div class="relative">
+            <input type="text" id="search-input" placeholder="Make, model, stock #..." class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="category">Category</label>
-          <input type="text" id="category" placeholder="e.g. Maintenance, Research, Log">
+        <!-- Filter by Tag / Code -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Filter Tag</label>
+          <select id="code-filter" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            <option value="ALL">All Tags</option>
+            <option value="FAVORITE">⭐ Favorite</option>
+            <option value="REVIEW">👀 Needs Review</option>
+            <option value="REJECT">❌ Rejected</option>
+            <option value="BUY">🛒 Ready to Buy</option>
+            <option value="UNTAGGED">Untagged Only</option>
+          </select>
         </div>
 
-        <div class="form-group">
-          <label for="notes">Notes & Details</label>
-          <textarea id="notes" rows="4" placeholder="Enter record details..."></textarea>
+        <!-- Sort By -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Sort By</label>
+          <select id="sort-filter" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="year-desc">Year: Newest First</option>
+            <option value="mileage-asc">Mileage: Lowest First</option>
+          </select>
         </div>
 
-        <div class="btn-group">
-          <button type="submit" class="btn-primary" id="save-btn">Save Record</button>
-          <button type="button" class="btn-cancel" id="cancel-btn" style="display: none;" onclick="resetForm()">Cancel Edit</button>
+        <!-- Summary Stats -->
+        <div class="flex items-center justify-between sm:justify-end gap-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+          <div class="text-right">
+            <span class="block text-xs text-gray-500 font-semibold">Total Displayed</span>
+            <span id="vehicle-count" class="text-xl font-bold text-slate-800">0</span>
+          </div>
         </div>
-      </form>
+
+      </div>
     </div>
 
-    <!-- Records Table -->
-    <div class="card">
-      <h3>Saved Cloud Records</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Notes</th>
-            <th>Last Updated</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="records-body">
-          <tr>
-            <td colspan="5">Loading records from Firebase...</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Vehicles Grid Container -->
+    <div id="vehicles-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Dynamic Vehicle Cards render here -->
+    </div>
+
+    <!-- Empty State Container -->
+    <div id="empty-state" class="hidden text-center py-16 bg-white rounded-xl border border-dashed border-gray-300 my-8">
+      <i class="fa-solid fa-car-side text-4xl text-gray-300 mb-3"></i>
+      <h3 class="text-lg font-semibold text-gray-700">No Vehicles Match Your Criteria</h3>
+      <p class="text-sm text-gray-500 mt-1">Try resetting your filters or clearing your search term.</p>
+    </div>
+
+  </main>
+
+  <!-- Vehicle Note & Tag Edit Modal -->
+  <div id="edit-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-100 transform transition-all">
+      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-blue-400"></i> Edit Vehicle Research Notes
+        </h3>
+        <button onclick="closeEditModal()" class="text-slate-400 hover:text-white transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div>
+          <p id="modal-vehicle-title" class="font-bold text-gray-800 text-lg"></p>
+          <p id="modal-stock-num" class="text-xs font-mono text-gray-500"></p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Tag Status</label>
+          <select id="modal-code" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">No Tag (Default)</option>
+            <option value="FAVORITE">⭐ Favorite</option>
+            <option value="REVIEW">👀 Needs Review</option>
+            <option value="REJECT">❌ Rejected</option>
+            <option value="BUY">🛒 Ready to Buy</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Personal Research Notes</label>
+          <textarea id="modal-comments" rows="4" placeholder="Enter trim details, inspection notes, pricing comments..." class="w-full p-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 px-6 py-3 flex justify-end gap-3 border-t border-gray-100">
+        <button onclick="closeEditModal()" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition">Cancel</button>
+        <button onclick="saveVehicleNotes()" class="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm transition">Save Changes</button>
+      </div>
     </div>
   </div>
 
-  <!-- Firebase v9+ SDKs -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { 
-      getFirestore, 
-      collection, 
-      addDoc, 
-      updateDoc, 
-      deleteDoc, 
-      doc, 
-      onSnapshot, 
-      serverTimestamp 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    // -------------------------------------------------------------
-    // Firebase Configuration
-    // Replace the placeholders below with your project credentials
-    // -------------------------------------------------------------
+  <!-- JavaScript Logic -->
+  <script>
+    // STEP 1: FIREBASE INITIALIZATION CONFIGURATION
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
+      apiKey: "YOUR_ACTUAL_API_KEY",
       authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
       projectId: "YOUR_PROJECT_ID",
       storageBucket: "YOUR_PROJECT_ID.appspot.com",
@@ -221,135 +155,227 @@
       appId: "YOUR_APP_ID"
     };
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const collectionRef = collection(db, "rec_reports");
+    // Initialize Firebase Compat Application
+    let db = null;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+    } catch (e) {
+      console.warn("Firebase config not fully configured. Defaulting local fallback mode.", e);
+    }
 
-    const statusBadge = document.getElementById("connection-status");
-    const recordsBody = document.getElementById("records-body");
-    const recForm = document.getElementById("rec-form");
+    // Default Seed Data
+    const seedVehicles = [
+      { stockNum: "214589", year: 2021, make: "Toyota", model: "RAV4 XLE", price: 24998, mileage: 34200, location: "Baltimore, MD", comments: "", code: "" },
+      { stockNum: "220194", year: 2020, make: "Honda", model: "CR-V EX-L", price: 23599, mileage: 41000, location: "Laurel, MD", comments: "", code: "" },
+      { stockNum: "238910", year: 2022, make: "Mazda", model: "CX-5 Touring", price: 25499, mileage: 22100, location: "Elkridge, MD", comments: "", code: "" }
+    ];
 
-    // Real-Time Cloud Listener
-    onSnapshot(collectionRef, (snapshot) => {
-      statusBadge.textContent = "● Online (Firebase Active)";
-      statusBadge.classList.remove("offline");
+    let vehiclesState = [];
+    let activeEditingStockNum = null;
 
-      if (snapshot.empty) {
-        recordsBody.innerHTML = `<tr><td colspan="5">No records found. Create one above!</td></tr>`;
+    // STEP 3: INITIALIZE DATA STORE WITH REAL-TIME FIRESTORE SYNC
+    function initDataStore() {
+      const localData = localStorage.getItem('carmax_research_vehicles_v1.8');
+      vehiclesState = localData ? JSON.parse(localData) : seedVehicles;
+
+      if (db) {
+        // Real-time synchronization standard setup
+        db.collection("vehicles").onSnapshot((snapshot) => {
+          document.getElementById('status-indicator').className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+          document.getElementById('status-text').innerText = "Live Cloud Sync Active";
+
+          if (!snapshot.empty) {
+            snapshot.forEach((doc) => {
+              const remoteData = doc.data();
+              const localIndex = vehiclesState.findIndex(v => v.stockNum === doc.id);
+              if (localIndex !== -1) {
+                vehiclesState[localIndex].comments = remoteData.comments || vehiclesState[localIndex].comments;
+                vehiclesState[localIndex].code = remoteData.code || vehiclesState[localIndex].code;
+                vehiclesState[localIndex].modifiedDate = remoteData.modifiedDate || vehiclesState[localIndex].modifiedDate;
+              }
+            });
+            localStorage.setItem('carmax_research_vehicles_v1.8', JSON.stringify(vehiclesState));
+            applyFiltersAndSort();
+          }
+        }, (error) => {
+          console.error("Firestore Listener Error:", error);
+          document.getElementById('status-indicator').className = "w-2.5 h-2.5 rounded-full bg-amber-500";
+          document.getElementById('status-text').innerText = "Local Cache Mode";
+        });
+      } else {
+        document.getElementById('status-indicator').className = "w-2.5 h-2.5 rounded-full bg-amber-500";
+        document.getElementById('status-text').innerText = "Local Cache Mode";
+      }
+
+      applyFiltersAndSort();
+    }
+
+    // UI RENDER METHOD
+    function renderVehicles(vehicles) {
+      const grid = document.getElementById('vehicles-grid');
+      const emptyState = document.getElementById('empty-state');
+      document.getElementById('vehicle-count').innerText = vehicles.length;
+
+      grid.innerHTML = '';
+
+      if (vehicles.length === 0) {
+        emptyState.classList.remove('hidden');
         return;
+      } else {
+        emptyState.classList.add('hidden');
       }
 
-      recordsBody.innerHTML = "";
-      
-      snapshot.docs.forEach((document) => {
-        const data = document.data();
-        const id = document.id; // Capture Firestore Document ID
-        
-        const row = document.createElement("tr");
-        
-        const dateFormatted = data.updatedAt 
-          ? new Date(data.updatedAt.toDate()).toLocaleString() 
-          : "Just now";
+      vehicles.forEach(vehicle => {
+        let tagBadge = '';
+        switch(vehicle.code) {
+          case 'FAVORITE':
+            tagBadge = '<span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2.5 py-0.5 rounded border border-amber-300">⭐ Favorite</span>';
+            break;
+          case 'REVIEW':
+            tagBadge = '<span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded border border-blue-300">👀 Needs Review</span>';
+            break;
+          case 'REJECT':
+            tagBadge = '<span class="bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded border border-red-300">❌ Rejected</span>';
+            break;
+          case 'BUY':
+            tagBadge = '<span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded border border-emerald-300">🛒 Ready to Buy</span>';
+            break;
+        }
 
-        row.innerHTML = `
-          <td><strong>${escapeHtml(data.title || '')}</strong></td>
-          <td>${escapeHtml(data.category || '')}</td>
-          <td>${escapeHtml(data.notes || '')}</td>
-          <td><small>${dateFormatted}</small></td>
-          <td>
-            <button class="btn-primary" onclick="editRecord('${id}', \`${escapeQuotes(data.title)}\`, \`${escapeQuotes(data.category)}\`, \`${escapeQuotes(data.notes)}\`)">Edit</button>
-            <button class="btn-danger" onclick="deleteRecord('${id}')">Delete</button>
-          </td>
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-xl shadow-sm hover:shadow-md transition border border-gray-200 flex flex-col justify-between overflow-hidden";
+        card.innerHTML = `
+          <div class="p-5">
+            <div class="flex justify-between items-start gap-2 mb-2">
+              <h2 class="font-bold text-lg text-slate-800 tracking-tight">${vehicle.year} ${vehicle.make} ${vehicle.model}</h2>
+              <div>${tagBadge}</div>
+            </div>
+            
+            <div class="flex justify-between items-baseline mb-4">
+              <span class="text-2xl font-extrabold text-blue-600">$${vehicle.price.toLocaleString()}</span>
+              <span class="text-xs font-medium text-gray-500">${vehicle.mileage.toLocaleString()} miles</span>
+            </div>
+
+            <div class="text-xs text-gray-500 mb-4 flex items-center gap-4">
+              <span><i class="fa-solid fa-location-dot mr-1"></i> ${vehicle.location}</span>
+              <span><i class="fa-solid fa-barcode mr-1"></i> #${vehicle.stockNum}</span>
+            </div>
+
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 min-h-[4rem]">
+              <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Notes</p>
+              <p class="text-xs text-gray-700 italic">${vehicle.comments ? vehicle.comments : 'No comments added yet...'}</p>
+              ${vehicle.modifiedDate ? `<p class="text-[10px] text-gray-400 mt-2 text-right">Updated: ${vehicle.modifiedDate}</p>` : ''}
+            </div>
+          </div>
+
+          <div class="bg-slate-50 px-5 py-3 border-t border-gray-100 flex justify-end">
+            <button onclick="openEditModal('${vehicle.stockNum}')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-pen"></i> Edit Notes & Tag
+            </button>
+          </div>
         `;
-        recordsBody.appendChild(row);
+        grid.appendChild(card);
       });
-    }, (error) => {
-      console.error("Firestore subscription error:", error);
-      statusBadge.textContent = "● Offline / Connection Error";
-      statusBadge.classList.add("offline");
-      recordsBody.innerHTML = `<tr><td colspan="5" style="color: red;">Failed to load records. Check API keys and security rules.</td></tr>`;
-    });
-
-    // Form Submit Handler (Handles both Create and Update)
-    recForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const recordId = document.getElementById("record-id").value;
-      const title = document.getElementById("title").value;
-      const category = document.getElementById("category").value;
-      const notes = document.getElementById("notes").value;
-
-      const recordData = {
-        title,
-        category,
-        notes,
-        updatedAt: serverTimestamp()
-      };
-
-      try {
-        if (recordId) {
-          // UPDATE EXISTING RECORD
-          const docRef = doc(db, "rec_reports", recordId);
-          await updateDoc(docRef, recordData);
-          console.log("Record updated:", recordId);
-        } else {
-          // CREATE NEW RECORD
-          await addDoc(collectionRef, recordData);
-          console.log("New record added");
-        }
-
-        resetForm();
-      } catch (error) {
-        console.error("Error saving record to Firebase:", error);
-        alert("Error saving changes. Check browser console for details.");
-      }
-    });
-
-    // Edit Button Action
-    window.editRecord = (id, title, category, notes) => {
-      document.getElementById("record-id").value = id;
-      document.getElementById("title").value = title;
-      document.getElementById("category").value = category;
-      document.getElementById("notes").value = notes;
-
-      document.getElementById("form-title").textContent = "Edit Record";
-      document.getElementById("save-btn").textContent = "Update Record";
-      document.getElementById("cancel-btn").style.display = "inline-block";
-      
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    // Delete Action
-    window.deleteRecord = async (id) => {
-      if (confirm("Are you sure you want to delete this record?")) {
-        try {
-          await deleteDoc(doc(db, "rec_reports", id));
-        } catch (error) {
-          console.error("Error deleting record:", error);
-        }
-      }
-    };
-
-    // Reset Form UI State
-    window.resetForm = () => {
-      document.getElementById("record-id").value = "";
-      recForm.reset();
-      document.getElementById("form-title").textContent = "Add New Record";
-      document.getElementById("save-btn").textContent = "Save Record";
-      document.getElementById("cancel-btn").style.display = "none";
-    };
-
-    // Helper utilities for HTML escaping
-    function escapeHtml(str) {
-      return str.replace(/[&<>"']/g, (m) => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-      }[m]));
     }
 
-    function escapeQuotes(str) {
-      return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    // FILTER & SORT LOGIC
+    function applyFiltersAndSort() {
+      const searchTerm = document.getElementById('search-input').value.toLowerCase();
+      const codeFilter = document.getElementById('code-filter').value;
+      const sortFilter = document.getElementById('sort-filter').value;
+
+      let filtered = vehiclesState.filter(vehicle => {
+        const matchesSearch = `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.stockNum}`.toLowerCase().includes(searchTerm);
+        
+        let matchesCode = true;
+        if (codeFilter === 'UNTAGGED') {
+          matchesCode = !vehicle.code;
+        } else if (codeFilter !== 'ALL') {
+          matchesCode = vehicle.code === codeFilter;
+        }
+
+        return matchesSearch && matchesCode;
+      });
+
+      filtered.sort((a, b) => {
+        if (sortFilter === 'price-asc') return a.price - b.price;
+        if (sortFilter === 'price-desc') return b.price - a.price;
+        if (sortFilter === 'year-desc') return b.year - a.year;
+        if (sortFilter === 'mileage-asc') return a.mileage - b.mileage;
+        return 0;
+      });
+
+      renderVehicles(filtered);
     }
+
+    // MODAL CONTROL
+    function openEditModal(stockNum) {
+      activeEditingStockNum = stockNum;
+      const vehicle = vehiclesState.find(v => v.stockNum === stockNum);
+      if (vehicle) {
+        document.getElementById('modal-vehicle-title').innerText = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
+        document.getElementById('modal-stock-num').innerText = `Stock #${vehicle.stockNum}`;
+        document.getElementById('modal-comments').value = vehicle.comments || '';
+        document.getElementById('modal-code').value = vehicle.code || '';
+        document.getElementById('edit-modal').classList.remove('hidden');
+      }
+    }
+
+    function closeEditModal() {
+      activeEditingStockNum = null;
+      document.getElementById('edit-modal').classList.add('hidden');
+    }
+
+    // STEP 2: SAVE VEHICLE NOTES & TAGS TO FIRESTORE & LOCAL STORAGE
+    function saveVehicleNotes() {
+      if (!activeEditingStockNum) return;
+
+      const vehicle = vehiclesState.find(v => v.stockNum === activeEditingStockNum);
+      if (vehicle) {
+        const newComments = document.getElementById('modal-comments').value.trim();
+        const newCode = document.getElementById('modal-code').value;
+
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + 
+                              now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+        vehicle.comments = newComments;
+        vehicle.code = newCode;
+        vehicle.modifiedDate = formattedDate;
+
+        // 1. Update Local Cache for immediate UI reflection
+        localStorage.setItem('carmax_research_vehicles_v1.8', JSON.stringify(vehiclesState));
+
+        // 2. Persist directly to Cloud Firestore using Compat API syntax
+        if (db) {
+          db.collection("vehicles").doc(vehicle.stockNum).set({
+            stockNum: vehicle.stockNum,
+            comments: newComments,
+            code: newCode,
+            modifiedDate: formattedDate,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true })
+          .then(() => {
+            console.log(`Document #${vehicle.stockNum} updated successfully in Firestore.`);
+          })
+          .catch((error) => {
+            console.error("Firestore Write Error: ", error);
+          });
+        }
+
+        applyFiltersAndSort();
+        closeEditModal();
+      }
+    }
+
+    // EVENT LISTENERS
+    document.getElementById('search-input').addEventListener('input', applyFiltersAndSort);
+    document.getElementById('code-filter').addEventListener('change', applyFiltersAndSort);
+    document.getElementById('sort-filter').addEventListener('change', applyFiltersAndSort);
+
+    // INIT ON LOAD
+    window.addEventListener('DOMContentLoaded', initDataStore);
   </script>
 </body>
 </html>
