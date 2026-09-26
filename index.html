@@ -1,1116 +1,354 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Vehicle Research Hub v1.8 - CarMax Inventory Reconciliation</title>
-  
-  <!-- Firebase App & Database SDKs (v10.12.0) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            carmax: {
-              navy: '#002855',
-              yellow: '#FFC72C',
-              lightGray: '#F4F5F7',
-              border: '#E2E8F0'
-            }
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- Google Fonts & Lucide Icons -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest"></script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rec Report - v1.8.1</title>
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .font-mono { font-family: 'JetBrains Mono', monospace; }
-    
-    /* Scrollbar styling for sleek dark mode */
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #475569; }
-
-    @media print {
-      body { background: white !important; color: black !important; }
-      .no-print { display: none !important; }
-      .print-only { display: block !important; }
-      .page-break { page-break-after: always; }
+    :root {
+      --bg-color: #f4f6f8;
+      --card-bg: #ffffff;
+      --primary: #05edf5;
+      --primary-dark: #029aaa;
+      --text: #222222;
+      --border: #cccccc;
+      --danger: #ff4d4d;
     }
-    .print-only { display: none; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    .version-tag {
+      background-color: #e0e0e0;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 1rem;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: #000;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+      color: #fff;
+    }
+
+    .btn-cancel {
+      background-color: #888888;
+      color: #fff;
+    }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: #fff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    .status-badge {
+      font-size: 0.85rem;
+      color: #008000;
+      font-weight: bold;
+    }
+
+    .status-badge.offline {
+      color: var(--danger);
+    }
   </style>
 </head>
-<body class="h-full flex flex-col min-h-screen overflow-x-hidden bg-slate-900 text-slate-100">
+<body>
 
-  <!-- STICKY TOP HEADER & NAVIGATION TOOLBAR -->
-  <header class="bg-slate-800/95 backdrop-blur-md border-b border-slate-700 sticky top-0 z-40 no-print shadow-xl">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
-      
-      <!-- Brand & Title -->
-      <div class="flex items-center gap-3">
-        <div class="bg-blue-600 text-white p-2 rounded-xl shadow-lg shadow-blue-500/20">
-          <i data-lucide="car" class="w-6 h-6"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">Vehicle Research Hub</h1>
-            <span class="bg-blue-900/80 text-blue-300 text-xs font-semibold px-2 py-0.5 rounded-full border border-blue-700/50">v1.8</span>
-          </div>
-          <p class="text-xs text-slate-400">CarMax Inventory Reconciliation & Real-Time Lot Inspection</p>
-        </div>
-      </div>
-
-      <!-- Navigation Views & Configuration Controls -->
-      <div class="flex items-center gap-2 flex-wrap">
-        <div class="bg-slate-900 p-1 rounded-lg border border-slate-700 flex items-center">
-          <button id="nav-btn-interactive" onclick="navigateTo('interactive')" class="px-3.5 py-1.5 text-xs font-medium rounded-md transition-all bg-blue-600 text-white shadow">
-            <i data-lucide="layout-grid" class="w-3.5 h-3.5 inline mr-1.5"></i> Interactive App
-          </button>
-          <button id="nav-btn-reports" onclick="navigateTo('reports')" class="px-3.5 py-1.5 text-xs font-medium rounded-md text-slate-300 hover:text-white transition-all">
-            <i data-lucide="file-text" class="w-3.5 h-3.5 inline mr-1.5"></i> Reports
-          </button>
-        </div>
-
-        <button onclick="toggleTagManagerModal()" class="p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition-all" title="Manage Research Tags">
-          <i data-lucide="tags" class="w-4 h-4 text-purple-400"></i>
-          <span class="hidden sm:inline">Manage Tags</span>
-        </button>
-
-        <button onclick="toggleConfigModal()" class="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs flex items-center gap-1.5 transition-all">
-          <i data-lucide="database" class="w-4 h-4 text-emerald-400"></i>
-          <span class="hidden sm:inline">Firestore Sync</span>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- 1. MAIN INTERACTIVE APP VIEW -->
-  <main id="view-interactive" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 no-print">
-
-    <!-- Search & Dynamic Filter Controls Toolbar -->
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-3 sm:p-4 shadow-xl flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-      
-      <!-- Search Input -->
-      <div class="relative flex-1">
-        <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-        <input 
-          type="text" 
-          id="search-input" 
-          placeholder="Search stock #, year, description, VIN, location, status, tag, or notes..." 
-          oninput="handleSearch(this.value)"
-          class="w-full bg-slate-900 border border-slate-700 focus:border-blue-500 text-white text-sm rounded-xl pl-11 pr-10 py-2.5 outline-none transition-all placeholder:text-slate-500"
-        >
-        <button id="search-clear-btn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
-          <i data-lucide="x-circle" class="w-4 h-4"></i>
-        </button>
-      </div>
-
-      <!-- Tag Filters & Reset Actions -->
-      <div class="flex items-center gap-2 flex-wrap">
-        <select id="filter-tag" onchange="handleFilterTag(this.value)" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none focus:border-blue-500">
-          <option value="ALL">All Research Tags</option>
-          <!-- Dynamic options populated via JS -->
-        </select>
-
-        <button onclick="resetSortOrder()" class="px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium rounded-xl flex items-center gap-1.5 transition-all">
-          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-          <span>Reset Order</span>
-        </button>
-
-        <button onclick="reloadSampleData()" class="px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium rounded-xl flex items-center gap-1.5 transition-all">
-          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-          <span>Reset Data</span>
-        </button>
-
-        <button onclick="exportDataJSON()" class="px-3 py-2.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 text-xs font-medium rounded-xl flex items-center gap-1.5 transition-all">
-          <i data-lucide="download" class="w-3.5 h-3.5"></i>
-          <span>Export JSON</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Active Sort & Stats Bar -->
-    <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+  <div class="container">
+    <header>
+      <h2>Rec Report</h2>
       <div>
-        Showing <span id="record-count" class="font-bold text-white">0</span> vehicles
-        <span id="sort-indicator-badge" class="ml-2 bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">Sort: Original Order</span>
+        <span id="connection-status" class="status-badge">Initializing Firebase...</span>
+        <span class="version-tag">v1.8.1</span>
       </div>
-      <div class="hidden sm:block">
-        <span class="text-slate-500"><i data-lucide="arrow-up-down" class="w-3 h-3 inline mr-1"></i>Click table headers to sort</span>
-      </div>
+    </header>
+
+    <!-- Form Section -->
+    <div class="card">
+      <h3 id="form-title">Add New Record</h3>
+      <form id="rec-form">
+        <input type="hidden" id="record-id">
+        
+        <div class="form-group">
+          <label for="title">Title / Item Name</label>
+          <input type="text" id="title" required placeholder="e.g. Vehicle Inspection Report">
+        </div>
+
+        <div class="form-group">
+          <label for="category">Category</label>
+          <input type="text" id="category" placeholder="e.g. Maintenance, Research, Log">
+        </div>
+
+        <div class="form-group">
+          <label for="notes">Notes & Details</label>
+          <textarea id="notes" rows="4" placeholder="Enter record details..."></textarea>
+        </div>
+
+        <div class="btn-group">
+          <button type="submit" class="btn-primary" id="save-btn">Save Record</button>
+          <button type="button" class="btn-cancel" id="cancel-btn" style="display: none;" onclick="resetForm()">Cancel Edit</button>
+        </div>
+      </form>
     </div>
 
-    <!-- FROZEN & STICKY TABLE DESKTOP CONTAINER -->
-    <div class="hidden md:block bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl relative max-h-[calc(100vh-250px)] overflow-y-auto">
-      <table class="w-full text-left text-xs border-collapse">
-        <!-- Sticky Table Header -->
-        <thead class="bg-slate-900/95 backdrop-blur-md text-slate-300 font-semibold border-b border-slate-700 uppercase tracking-wider sticky top-0 z-20 shadow-md">
+    <!-- Records Table -->
+    <div class="card">
+      <h3>Saved Cloud Records</h3>
+      <table>
+        <thead>
           <tr>
-            <th onclick="sortTable('originalIndex')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors"># <span id="sort-icon-originalIndex"></span></th>
-            <th onclick="sortTable('stockNum')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Stock # <span id="sort-icon-stockNum"></span></th>
-            <th onclick="sortTable('year')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Year <span id="sort-icon-year"></span></th>
-            <th onclick="sortTable('vehicleDescription')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Description <span id="sort-icon-vehicleDescription"></span></th>
-            <th onclick="sortTable('lastScanLocation')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Location <span id="sort-icon-lastScanLocation"></span></th>
-            <th onclick="sortTable('zoneDescription')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Zone <span id="sort-icon-zoneDescription"></span></th>
-            <th onclick="sortTable('vin')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">VIN <span id="sort-icon-vin"></span></th>
-            <th onclick="sortTable('productStatus')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Status <span id="sort-icon-productStatus"></span></th>
-            <th onclick="sortTable('code')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Research Tag <span id="sort-icon-code"></span></th>
-            <th onclick="sortTable('modifiedDate')" class="px-3 py-3.5 cursor-pointer hover:bg-slate-800 transition-colors">Modified <span id="sort-icon-modifiedDate"></span></th>
-            <th class="px-3 py-3.5 text-right">Actions</th>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Notes</th>
+            <th>Last Updated</th>
+            <th>Actions</th>
           </tr>
         </thead>
-        <tbody id="vehicle-table-body" class="divide-y divide-slate-700/60 font-medium">
-          <!-- Dynamic table rows rendered via JavaScript -->
+        <tbody id="records-body">
+          <tr>
+            <td colspan="5">Loading records from Firebase...</td>
+          </tr>
         </tbody>
       </table>
     </div>
-
-    <!-- Mobile Touch Card List View -->
-    <div id="mobile-card-container" class="md:hidden space-y-4">
-      <!-- Dynamic mobile cards rendered via JavaScript -->
-    </div>
-
-  </main>
-
-  <!-- 2. REPORTS HUB PAGE -->
-  <main id="view-reports-hub" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 no-print">
-    <div class="border-b border-slate-700 pb-4">
-      <h2 class="text-2xl font-bold text-white flex items-center gap-2">
-        <i data-lucide="file-text" class="w-6 h-6 text-blue-400"></i>
-        <span>CarMax Inventory Reports</span>
-      </h2>
-      <p class="text-sm text-slate-400 mt-1">Select an official inventory reconciliation report view format to preview, review notes, or generate print PDFs.</p>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      
-      <!-- Report View 1 Card -->
-      <div class="bg-slate-800 border border-slate-700 hover:border-blue-500/50 rounded-2xl p-6 space-y-4 shadow-xl transition-all flex flex-col justify-between">
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-mono font-semibold rounded-lg">Format 1</span>
-            <span class="text-xs text-slate-400 font-mono">Reconciliation Sheet</span>
-          </div>
-          <h3 class="text-lg font-bold text-white">CarMax Report View 1</h3>
-          <p class="text-xs text-slate-300 leading-relaxed">
-            Standard CarMax inventory reconciliation layout grouped by zone status. Includes stock number, scan location, vehicle description, VIN, status, and <strong>Research Notes</strong>.
-          </p>
-        </div>
-        <button onclick="navigateTo('report1')" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/20">
-          <span>Open Report View 1</span>
-          <i data-lucide="arrow-right" class="w-4 h-4"></i>
-        </button>
-      </div>
-
-      <!-- Report View 2 Card -->
-      <div class="bg-slate-800 border border-slate-700 hover:border-purple-500/50 rounded-2xl p-6 space-y-4 shadow-xl transition-all flex flex-col justify-between">
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="px-2.5 py-1 bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xs font-mono font-semibold rounded-lg">Format 2</span>
-            <span class="text-xs text-slate-400 font-mono">Tag Classification</span>
-          </div>
-          <h3 class="text-lg font-bold text-white">CarMax Report View 2</h3>
-          <p class="text-xs text-slate-300 leading-relaxed">
-            Maintains all standard inventory reconciliation columns, but replaces the Research Notes column with the dynamic <strong>Research Tag</strong> classification badge.
-          </p>
-        </div>
-        <button onclick="navigateTo('report2')" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-600/20">
-          <span>Open Report View 2</span>
-          <i data-lucide="arrow-right" class="w-4 h-4"></i>
-        </button>
-      </div>
-
-    </div>
-  </main>
-
-  <!-- 3. CARMAX REPORT VIEW 1 CONTAINER -->
-  <div id="view-report-1" class="hidden max-w-6xl mx-auto my-6 p-6 sm:p-8 bg-white text-black shadow-2xl rounded-xl">
-    <!-- Action Bar -->
-    <div class="mb-4 pb-3 border-b border-slate-300 flex justify-between items-center text-xs no-print">
-      <button onclick="navigateTo('reports')" class="px-3 py-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 flex items-center gap-1.5">
-        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back to Reports
-      </button>
-      <div class="flex items-center gap-2">
-        <span class="font-mono text-slate-500 font-bold">Report Format: Research Notes</span>
-        <button onclick="window.print()" class="px-3.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 font-medium flex items-center gap-1.5">
-          <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print / Save PDF
-        </button>
-      </div>
-    </div>
-
-    <!-- Official Header -->
-    <div class="border-b-2 border-black pb-3 mb-4 flex justify-between items-start">
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="text-2xl font-black tracking-tight text-blue-900">CarMax</span>
-          <span class="text-xs border border-black px-1 font-semibold">RECON CIL</span>
-        </div>
-        <p class="text-xs font-mono mt-1">Sorted by Last Scan Location and Stock Num</p>
-      </div>
-      <div class="text-right text-xs font-mono">
-        <p class="font-bold">Inventory Reconciliation Report</p>
-        <p>Report Date: 09/26/26 11:00 AM</p>
-        <p>Location Number: 4070</p>
-        <p>Page: 1 of 10</p>
-      </div>
-    </div>
-
-    <!-- Dynamic Content -->
-    <div id="report-1-content" class="space-y-6 text-xs font-mono"></div>
   </div>
 
-  <!-- 4. CARMAX REPORT VIEW 2 CONTAINER -->
-  <div id="view-report-2" class="hidden max-w-6xl mx-auto my-6 p-6 sm:p-8 bg-white text-black shadow-2xl rounded-xl">
-    <!-- Action Bar -->
-    <div class="mb-4 pb-3 border-b border-slate-300 flex justify-between items-center text-xs no-print">
-      <button onclick="navigateTo('reports')" class="px-3 py-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 flex items-center gap-1.5">
-        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back to Reports
-      </button>
-      <div class="flex items-center gap-2">
-        <span class="font-mono text-slate-500 font-bold">Report Format: Research Tags</span>
-        <button onclick="window.print()" class="px-3.5 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-500 font-medium flex items-center gap-1.5">
-          <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print / Save PDF
-        </button>
-      </div>
-    </div>
+  <!-- Firebase v9+ SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      updateDoc, 
+      deleteDoc, 
+      doc, 
+      onSnapshot, 
+      serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    <!-- Official Header -->
-    <div class="border-b-2 border-black pb-3 mb-4 flex justify-between items-start">
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="text-2xl font-black tracking-tight text-blue-900">CarMax</span>
-          <span class="text-xs border border-black px-1 font-semibold">RECON CIL</span>
-        </div>
-        <p class="text-xs font-mono mt-1">Sorted by Last Scan Location and Stock Num</p>
-      </div>
-      <div class="text-right text-xs font-mono">
-        <p class="font-bold">Inventory Reconciliation Report (Tags)</p>
-        <p>Report Date: 09/26/26 11:00 AM</p>
-        <p>Location Number: 4070</p>
-        <p>Page: 1 of 10</p>
-      </div>
-    </div>
-
-    <!-- Dynamic Content -->
-    <div id="report-2-content" class="space-y-6 text-xs font-mono"></div>
-  </div>
-
-  <!-- EDIT VEHICLE RESEARCH NOTES & TAG MODAL -->
-  <div id="edit-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-[calc(100vw-1.5rem)] sm:max-w-lg overflow-hidden shadow-2xl my-auto">
-      
-      <!-- Modal Header -->
-      <div class="p-4 bg-slate-900 border-b border-slate-700 flex justify-between items-center gap-2">
-        <div class="min-w-0 flex-1">
-          <h3 class="font-bold text-white flex items-center gap-2 text-sm sm:text-base">
-            <i data-lucide="edit-3" class="w-4 h-4 text-blue-400 shrink-0"></i>
-            <span class="truncate">Edit Research Notes & Tags</span>
-          </h3>
-          <p id="modal-vehicle-subtitle" class="text-xs text-slate-400 mt-0.5 font-mono truncate">Stock # ------</p>
-        </div>
-        <button onclick="closeEditModal()" class="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 shrink-0"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-
-      <!-- Modal Body -->
-      <div class="p-4 sm:p-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
-        
-        <!-- Context Vehicle Info Card -->
-        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 space-y-2">
-          <div class="flex flex-wrap items-center justify-between gap-1.5">
-            <div id="modal-vehicle-title" class="text-white font-bold text-xs sm:text-sm leading-snug break-words max-w-full">---</div>
-            <span id="modal-vehicle-status" class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-900/50 text-blue-300 border border-blue-700/50 shrink-0">---</span>
-          </div>
-          <div class="pt-1 border-t border-slate-800 flex flex-wrap justify-between text-[11px] text-slate-400 font-mono gap-1">
-            <span id="modal-vehicle-vin" class="break-all">VIN: ---</span>
-            <span id="modal-vehicle-color" class="text-slate-300">Color: ---</span>
-          </div>
-        </div>
-
-        <!-- Research Tag Selector with In-Modal Tag Management Trigger -->
-        <div>
-          <div class="flex justify-between items-center mb-1.5">
-            <label class="block text-slate-300 font-medium">Research Tag / Classification</label>
-            <button onclick="toggleTagManagerModal()" class="text-[11px] text-purple-400 hover:text-purple-300 flex items-center gap-1 transition-colors">
-              <i data-lucide="plus-circle" class="w-3 h-3"></i> Add / Manage Tags
-            </button>
-          </div>
-          <select id="modal-code" class="w-full bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm rounded-xl p-2.5 outline-none focus:border-blue-500">
-            <!-- Dynamically populated options -->
-          </select>
-        </div>
-
-        <!-- Comments Textarea -->
-        <div>
-          <label class="block text-slate-300 font-medium mb-1.5">Research Comments & Lot Notes</label>
-          <textarea id="modal-comments" rows="4" placeholder="Enter vehicle condition details, lot placement notes, or evaluation status..." class="w-full bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm rounded-xl p-3 outline-none focus:border-blue-500 placeholder:text-slate-500 min-h-[100px] resize-y"></textarea>
-        </div>
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="p-3 sm:p-4 bg-slate-900/80 border-t border-slate-700 flex justify-end gap-2">
-        <button onclick="closeEditModal()" class="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors">Cancel</button>
-        <button onclick="saveVehicleNotes()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-600/20 transition-all">
-          <i data-lucide="check" class="w-4 h-4"></i> Save Notes
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- RESEARCH TAG MANAGER MODAL -->
-  <div id="tag-manager-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-[calc(100vw-1.5rem)] sm:max-w-lg overflow-hidden shadow-2xl my-auto">
-      <div class="p-4 bg-slate-900 border-b border-slate-700 flex justify-between items-center">
-        <h3 class="font-bold text-white flex items-center gap-2 text-sm sm:text-base">
-          <i data-lucide="tags" class="w-4 h-4 text-purple-400"></i>
-          <span>Manage Research Tags</span>
-        </h3>
-        <button onclick="toggleTagManagerModal()" class="p-1 text-slate-400 hover:text-white rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-
-      <div class="p-4 sm:p-5 space-y-4 text-xs">
-        <!-- Add New Tag Form -->
-        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700 space-y-3">
-          <h4 class="font-semibold text-slate-200">Add New Custom Tag</h4>
-          <div class="flex flex-col sm:flex-row gap-2">
-            <input type="text" id="new-tag-name" placeholder="Tag Name (e.g. Needs Inspection)" class="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg p-2 outline-none focus:border-purple-500">
-            <select id="new-tag-color" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg p-2 outline-none">
-              <option value="purple">Purple Theme</option>
-              <option value="rose">Rose Theme</option>
-              <option value="amber">Amber Theme</option>
-              <option value="blue">Blue Theme</option>
-              <option value="emerald">Emerald Theme</option>
-              <option value="slate">Gray Theme</option>
-            </select>
-            <button onclick="addNewTag()" class="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg shrink-0">Add Tag</button>
-          </div>
-        </div>
-
-        <!-- Tag List -->
-        <div class="space-y-2">
-          <h4 class="font-semibold text-slate-300">Existing Tags</h4>
-          <div id="tag-list-container" class="space-y-2 max-h-60 overflow-y-auto pr-1">
-            <!-- Dynamic tag entries -->
-          </div>
-        </div>
-      </div>
-
-      <div class="p-3 sm:p-4 bg-slate-900/80 border-t border-slate-700 flex justify-end">
-        <button onclick="toggleTagManagerModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CONFIG MODAL -->
-  <div id="config-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-5 space-y-4">
-      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-        <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="settings" class="w-4 h-4 text-emerald-400"></i> Database Storage Mode</h3>
-        <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-      <p class="text-xs text-slate-300 leading-relaxed">
-        The application is configured to synchronize directly with <strong>Cloud Firestore</strong>. Changes made to vehicles or tags persist live in your Firebase Database collections.
-      </p>
-      <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 text-xs text-slate-400 space-y-2">
-        <div class="flex items-center justify-between text-white font-medium">
-          <span>Storage Engine:</span>
-          <span class="text-emerald-400">Cloud Firestore (Live Sync)</span>
-        </div>
-        <p>Collections: <code class="text-blue-400">vehicles</code>, <code class="text-purple-400">tags</code></p>
-      </div>
-      <div class="flex justify-end">
-        <button onclick="toggleConfigModal()" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- APPLICATION LOGIC & DATASET -->
-  <script>
-    // FIREBASE INITIALIZATION CONFIGURATION
+    // -------------------------------------------------------------
+    // Firebase Configuration
+    // Replace the placeholders below with your project credentials
+    // -------------------------------------------------------------
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
       projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
       appId: "YOUR_APP_ID"
     };
 
     // Initialize Firebase
-    if (firebase.apps.length === 0) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const collectionRef = collection(db, "rec_reports");
 
-    // DEFAULT RESEARCH TAG PRESETS
-    const DEFAULT_TAGS = [
-      { id: 'Unassigned', name: 'Unassigned', color: 'slate' },
-      { id: 'Priority Lead', name: 'Priority Lead', color: 'purple' },
-      { id: 'Needs Inspection', name: 'Needs Inspection', color: 'rose' },
-      { id: 'Pending Review', name: 'Pending Review', color: 'amber' },
-      { id: 'Hold', name: 'Hold', color: 'blue' },
-      { id: 'Archive', name: 'Archive', color: 'slate' }
-    ];
+    const statusBadge = document.getElementById("connection-status");
+    const recordsBody = document.getElementById("records-body");
+    const recForm = document.getElementById("rec-form");
 
-    // FULL 38-RECORD CARMAX INVENTORY SOURCE DATASET
-    const FULL_CARMAX_DATASET = [
-      // Section 1: IN-TRANSIT VEHICLES (16 records)
-      { stockNum: "28867015", year: "2014", vehicleDescription: "JEEP WRANGLER 4D SPORT UTILIT UNLIMITED S", lastScanDate: "9/21/26", lastScanLocation: "WZ510", zoneDescription: "WHOLESALE CUSTOMER LOT", daysInZone: "1", color: "BLACK", vin: "1C4BJWDG9EL269636", productStatus: "IN-TRANSIT", daysInStatus: "2", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "Front bumper scratched. Tires in good condition.", code: "Needs Inspection" },
-      { stockNum: "70231512", year: "2024", vehicleDescription: "HONDA ODYSSEY 4D PASS VAN EX-L", lastScanDate: "9/21/26", lastScanLocation: "WZ52", zoneDescription: "WHOLESALE CUSTOMER LOT", daysInZone: "1", color: "GRAY", vin: "5FNRL6H63RB075851", productStatus: "IN-TRANSIT", daysInStatus: "2", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "Minor interior cleanup required.", code: "Pending Review" },
-      { stockNum: "70263503", year: "2017", vehicleDescription: "HONDA ACCORD 4D SEDAN SPORT", lastScanDate: "9/21/26", lastScanLocation: "WZ53", zoneDescription: "WHOLESALE CUSTOMER LOT", daysInZone: "1", color: "SILVER", vin: "1HGCR2F54HA044799", productStatus: "IN-TRANSIT", daysInStatus: "2", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "High buyer interest at wholesale.", code: "Priority Lead" },
-      { stockNum: "70011030", year: "2019", vehicleDescription: "FIAT 124 SPIDER 2D CONVERTIBLE ABARTH", lastScanDate: "9/21/26", lastScanLocation: "WZ54", zoneDescription: "WHOLESALE CUSTOMER LOT", daysInZone: "1", color: "SILVER", vin: "JC1MFAEK7K0143337", productStatus: "IN-TRANSIT", daysInStatus: "2", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "Convertible soft top functional.", code: "Priority Lead" },
-      { stockNum: "28867016", year: "2013", vehicleDescription: "INFINITI G37 2D COUPE JOURNEY", lastScanDate: "9/21/26", lastScanLocation: "WZ55", zoneDescription: "WHOLESALE CUSTOMER LOT", daysInZone: "1", color: "BLACK", vin: "JN1CV6EK3DM922792", productStatus: "IN-TRANSIT", daysInStatus: "2", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70250460", year: "2019", vehicleDescription: "HONDA CIVIC 4D SEDAN SPORT", lastScanDate: "9/21/26", lastScanLocation: "WZ56", zoneDescription: "WHOLESALE CUSTOMER LOT", daysInZone: "1", color: "SILVER", vin: "2HGFC2F87KH514048", productStatus: "IN-TRANSIT", daysInStatus: "2", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70264524", year: "2019", vehicleDescription: "MERCEDES-BENZ GLS450 4D SPORT UTILIT (no trim)", lastScanDate: "9/21/26", lastScanLocation: "WZ57", zoneDescription: "WHOLESALE CUSTOMER LOT", daysInZone: "1", color: "WHITE", vin: "4JGDF6EE1KB226722", productStatus: "IN-TRANSIT", daysInStatus: "2", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "Premium trim check.", code: "Pending Review" },
-      { stockNum: "70265279", year: "2008", vehicleDescription: "JEEP GRAND CHEROKEE 4D SPORT UTILIT LIMIT", lastScanDate: "9/21/26", lastScanLocation: "WZ58", zoneDescription: "WHOLESALE CUSTOMER LOT", daysInZone: "1", color: "GRAY", vin: "1J8HS58288C118994", productStatus: "IN-TRANSIT", daysInStatus: "2", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "28867018", year: "2017", vehicleDescription: "CHEVROLET TRAVERSE 4D SPORT UTILIT PREMI", lastScanDate: "9/21/26", lastScanLocation: "WZ59", zoneDescription: "WHOLESALE CUSTOMER LOT", daysInZone: "1", color: "BLACK", vin: "1GNKVJKD1HJ137283", productStatus: "IN-TRANSIT", daysInStatus: "2", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70254205", year: "2007", vehicleDescription: "TOYOTA CAMRY HYBRID 4D SEDAN (no trim)", lastScanDate: "9/21/26", lastScanLocation: "WZA178", zoneDescription: "WHOLESALE ZONE A", daysInZone: "3", color: "SILVER", vin: "4T1BB46K470020169", productStatus: "IN-TRANSIT", daysInStatus: "3", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "Battery check needed.", code: "Needs Inspection" },
-      { stockNum: "28867021", year: "2018", vehicleDescription: "SUBARU CROSSTREK 4D SPORT UTILIT PREMIU", lastScanDate: "9/21/26", lastScanLocation: "WZA189", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLUE", vin: "JF2GTABC5JH333477", productStatus: "IN-TRANSIT", daysInStatus: "1", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70224908", year: "2014", vehicleDescription: "FORD FUSION 4D SEDAN SE", lastScanDate: "9/21/26", lastScanLocation: "WZD16", zoneDescription: "WHOLESALE ZONE D", daysInZone: "0", color: "BLACK", vin: "1FA6P0HD1E5404602", productStatus: "IN-TRANSIT", daysInStatus: "3", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70064438", year: "2006", vehicleDescription: "TOYOTA HIGHLANDER 4D SPORT UTILIT (no trin)", lastScanDate: "9/15/26", lastScanLocation: "WZD2", zoneDescription: "WHOLESALE ZONE D", daysInZone: "17", color: "GREEN", vin: "JTEEP21A560179449", productStatus: "IN-TRANSIT", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "High days in zone (17 days). Check Lot placement.", code: "Hold" },
-      { stockNum: "70244828", year: "2016", vehicleDescription: "LEXUS IS 300 4D SEDAN (no trim)", lastScanDate: "9/21/26", lastScanLocation: "WZF42", zoneDescription: "WHOLESALE ZONE F", daysInZone: "3", color: "SILVER", vin: "JTHCM1D20G5006296", productStatus: "IN-TRANSIT", daysInStatus: "3", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "28927932", year: "2002", vehicleDescription: "FORD F250 4D EXTENDED CAB XLT", lastScanDate: "9/21/26", lastScanLocation: "WZ16", zoneDescription: "ARBITRATION", daysInZone: "4", color: "RED", vin: "1FTNX20L52EB03170", productStatus: "IN-TRANSIT", daysInStatus: "4", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "In arbitration zone.", code: "Hold" },
-      { stockNum: "28866880", year: "2020", vehicleDescription: "MERCEDES-BENZ GLC300 4D SPORT UTILIT (no", lastScanDate: "9/21/26", lastScanLocation: "WZN25", zoneDescription: "NO RUNNER WALL", daysInZone: "3", color: "BLACK", vin: "W1N0G8EB4LF842810", productStatus: "IN-TRANSIT", daysInStatus: "7", reportSection: "INCORRECT PROD STATUS FOR ZONE - IN-TRANSIT VEHICLES", comments: "", code: "Unassigned" },
+    // Real-Time Cloud Listener
+    onSnapshot(collectionRef, (snapshot) => {
+      statusBadge.textContent = "● Online (Firebase Active)";
+      statusBadge.classList.remove("offline");
+
+      if (snapshot.empty) {
+        recordsBody.innerHTML = `<tr><td colspan="5">No records found. Create one above!</td></tr>`;
+        return;
+      }
+
+      recordsBody.innerHTML = "";
       
-      // Section 2: SOLD VEHICLES (22 records)
-      { stockNum: "70239510", year: "2017", vehicleDescription: "MAZDA CX-5 4D SPORT UTILIT GRAND TOURING", lastScanDate: "9/21/26", lastScanLocation: "WZA10", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLUE", vin: "JM3KFBDL8H0174313", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "Sold wholesale. Pending dealer pickup.", code: "Archive" },
-      { stockNum: "70246902", year: "2011", vehicleDescription: "NISSAN ROGUE 4D SPORT UTILIT S", lastScanDate: "9/21/26", lastScanLocation: "WZA100", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "GRAY", vin: "JN8AS5MV2BW670249", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Archive" },
-      { stockNum: "70237351", year: "2015", vehicleDescription: "NISSAN SENTRA 4D SEDAN SV", lastScanDate: "9/21/26", lastScanLocation: "WZA101", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLACK", vin: "3N1AB7AP0FL655700", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "Keys delivered to auction Lane.", code: "Hold" },
-      { stockNum: "70252438", year: "2015", vehicleDescription: "CADILLAC SRX 4D SPORT UTILIT LUXURY", lastScanDate: "9/21/26", lastScanLocation: "WZA103", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLUE", vin: "3GYFNEE37FS628810", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "29175583", year: "2024", vehicleDescription: "NISSAN SENTRA 4D SEDAN S", lastScanDate: "9/21/26", lastScanLocation: "WZA104", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "WHITE", vin: "3N1AB8BV8RY245768", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "28122460", year: "2014", vehicleDescription: "FORD EXPLORER 4D SPORT UTILIT XLT", lastScanDate: "9/21/26", lastScanLocation: "WZA107", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BURGUNDY", vin: "1FM5K8D81EGA67957", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "28840497", year: "2023", vehicleDescription: "HYUNDAI ELANTRA 4D SEDAN SEL", lastScanDate: "9/21/26", lastScanLocation: "WZA108", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "GRAY", vin: "KMHLM4AG7PU433284", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70241378", year: "2017", vehicleDescription: "SUBARU BRZ 2D COUPE LIMITED", lastScanDate: "9/21/26", lastScanLocation: "WZA109", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLACK", vin: "JF1CZC19H8605467", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70258319", year: "2017", vehicleDescription: "TOYOTA RAV4 4D SPORT UTILIT LE", lastScanDate: "9/21/26", lastScanLocation: "WZA11", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "GRAY", vin: "JTMZFREV6HJ3709723", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70235659", year: "2008", vehicleDescription: "CHEVROLET SILVERADO 1500 4D EXTENDED CAB", lastScanDate: "9/21/26", lastScanLocation: "WZA110", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BROWN", vin: "2GCEK19JX81225995", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "28783493", year: "2011", vehicleDescription: "HONDA ACCORD 4D SEDAN EX-L", lastScanDate: "9/21/26", lastScanLocation: "WZA111", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLACK", vin: "1HGCP2F83BA066445", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70239394", year: "2004", vehicleDescription: "TOYOTA CAMRY 4D SEDAN LE", lastScanDate: "9/21/26", lastScanLocation: "WZA120", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "GRAY", vin: "4T1BE32K44U856146", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70249993", year: "2016", vehicleDescription: "HYUNDAI TUCSON 4D SPORT UTILIT SE", lastScanDate: "9/21/26", lastScanLocation: "WZA121", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "GRAY", vin: "KM8J23A49GU240826", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70253635", year: "2015", vehicleDescription: "CADILLAC CTS 4D SEDAN LUXURY", lastScanDate: "9/21/26", lastScanLocation: "WZA122", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "WHITE", vin: "1G6AX5SX8F0109535", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70254193", year: "2021", vehicleDescription: "HYUNDAI PALISADE 4D SPORT UTILIT CALLIGRA", lastScanDate: "9/21/26", lastScanLocation: "WZA125", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLACK", vin: "KM8R7DHE2MU215366", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70248365", year: "2012", vehicleDescription: "HONDA CR-V 4D SPORT UTILIT EX-L", lastScanDate: "9/21/26", lastScanLocation: "WZA129", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "GRAY", vin: "JHLRM3H70CC004392", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70248712", year: "2021", vehicleDescription: "BUICK ENCLAVE 4D SPORT UTILIT PREMIUM", lastScanDate: "9/21/26", lastScanLocation: "WZA132", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLACK", vin: "5GAEVBKW1MJ163522", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "28730480", year: "2021", vehicleDescription: "CHEVROLET SILVERADO 1500 4D CREW CAB CU", lastScanDate: "9/21/26", lastScanLocation: "WZA133", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLUE", vin: "3GCPYBEK0MG339002", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "28863616", year: "2016", vehicleDescription: "BMW 428 4D SEDAN XI GRAN COUPE", lastScanDate: "9/21/26", lastScanLocation: "WZA138", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "BLACK", vin: "WBA4C9C5XGG136588", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "70255971", year: "2013", vehicleDescription: "TOYOTA HIGHLANDER 4D SPORT UTILIT SE", lastScanDate: "9/21/26", lastScanLocation: "WZA147", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "GRAY", vin: "5TDBK3EH5DS186930", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "29116913", year: "2008", vehicleDescription: "TOYOTA SIENNA 4D PASS VAN LE", lastScanDate: "9/21/26", lastScanLocation: "WZA149", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "GRAY", vin: "5TDZK23C98S220877", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" },
-      { stockNum: "29176316", year: "2020", vehicleDescription: "VOLVO XC60 PLUG-IN HYBRID 4D SPORT UTILIT", lastScanDate: "9/21/26", lastScanLocation: "WZA153", zoneDescription: "WHOLESALE ZONE A", daysInZone: "0", color: "GRAY", vin: "YV4BK0DP2L1468169", productStatus: "SOLD WHOLESALE", daysInStatus: "0", reportSection: "INCORRECT PROD STATUS FOR ZONE - SOLD VEHICLES", comments: "", code: "Unassigned" }
-    ];
+      snapshot.docs.forEach((document) => {
+        const data = document.data();
+        const id = document.id; // Capture Firestore Document ID
+        
+        const row = document.createElement("tr");
+        
+        const dateFormatted = data.updatedAt 
+          ? new Date(data.updatedAt.toDate()).toLocaleString() 
+          : "Just now";
 
-    // APPLICATION STATE
-    let tagsState = [];
-    let vehiclesState = [];
-    let filteredVehicles = [];
-    let currentSortColumn = 'originalIndex';
-    let currentSortDirection = 'asc';
-    let activeEditingStockNum = null;
-    let activeSearchTerm = '';
-    let activeTagFilter = 'ALL';
-
-    // INITIALIZATION
-    window.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
-      initTags();
-      initDataStore();
+        row.innerHTML = `
+          <td><strong>${escapeHtml(data.title || '')}</strong></td>
+          <td>${escapeHtml(data.category || '')}</td>
+          <td>${escapeHtml(data.notes || '')}</td>
+          <td><small>${dateFormatted}</small></td>
+          <td>
+            <button class="btn-primary" onclick="editRecord('${id}', \`${escapeQuotes(data.title)}\`, \`${escapeQuotes(data.category)}\`, \`${escapeQuotes(data.notes)}\`)">Edit</button>
+            <button class="btn-danger" onclick="deleteRecord('${id}')">Delete</button>
+          </td>
+        `;
+        recordsBody.appendChild(row);
+      });
+    }, (error) => {
+      console.error("Firestore subscription error:", error);
+      statusBadge.textContent = "● Offline / Connection Error";
+      statusBadge.classList.add("offline");
+      recordsBody.innerHTML = `<tr><td colspan="5" style="color: red;">Failed to load records. Check API keys and security rules.</td></tr>`;
     });
 
-    function initTags() {
-      // 1. First load from local cache for instant UI rendering
-      const stored = localStorage.getItem('carmax_research_tags_v1.8');
-      if (stored) {
-        try { tagsState = JSON.parse(stored); } catch(e) { tagsState = DEFAULT_TAGS; }
-      } else {
-        tagsState = DEFAULT_TAGS;
-        localStorage.setItem('carmax_research_tags_v1.8', JSON.stringify(tagsState));
-      }
-      renderTagDropdowns();
-
-      // 2. Attach real-time listener to Firestore 'tags' collection
-      db.collection("tags").onSnapshot((snapshot) => {
-        if (!snapshot.empty) {
-          const remoteTags = [];
-          snapshot.forEach((doc) => remoteTags.push(doc.data()));
-          tagsState = remoteTags;
-          localStorage.setItem('carmax_research_tags_v1.8', JSON.stringify(tagsState));
-          renderTagDropdowns();
-          applyFiltersAndSort();
-        }
-      }, (err) => {
-        console.warn("Firestore tags listener error (using local cache):", err);
-      });
-    }
-
-    function renderTagDropdowns() {
-      const filterSelect = document.getElementById('filter-tag');
-      const modalSelect = document.getElementById('modal-code');
-
-      filterSelect.innerHTML = `<option value="ALL">All Research Tags</option>`;
-      modalSelect.innerHTML = ``;
-
-      tagsState.forEach(tag => {
-        filterSelect.innerHTML += `<option value="${tag.name}">${tag.name}</option>`;
-        modalSelect.innerHTML += `<option value="${tag.name}">${tag.name}</option>`;
-      });
-
-      filterSelect.value = activeTagFilter;
-    }
-
-    function initDataStore() {
-      // 1. Initial load from local memory for snappy UX
-      const stored = localStorage.getItem('carmax_research_vehicles_v1.8');
-      if (stored) {
-        try { vehiclesState = JSON.parse(stored); } catch (e) { vehiclesState = loadDefaultDataset(); }
-      } else {
-        vehiclesState = loadDefaultDataset();
-      }
-      applyFiltersAndSort();
-
-      // 2. Attach Firestore Realtime Listener to the 'vehicles' collection
-      db.collection("vehicles").onSnapshot((snapshot) => {
-        if (!snapshot.empty) {
-          const firestoreMap = {};
-          snapshot.forEach((doc) => {
-            firestoreMap[doc.id] = doc.data();
-          });
-
-          // Merge Firestore changes into the state array
-          vehiclesState = vehiclesState.map(v => {
-            if (firestoreMap[v.stockNum]) {
-              return { ...v, ...firestoreMap[v.stockNum] };
-            }
-            return v;
-          });
-
-          localStorage.setItem('carmax_research_vehicles_v1.8', JSON.stringify(vehiclesState));
-          applyFiltersAndSort();
-        }
-      }, (error) => {
-        console.warn("Firestore listener fallback to LocalStorage:", error);
-      });
-    }
-
-    function loadDefaultDataset() {
-      const formatted = FULL_CARMAX_DATASET.map((item, index) => ({
-        ...item,
-        originalIndex: index + 1,
-        id: item.stockNum,
-        comments: item.comments || "",
-        code: item.code || "Unassigned",
-        modifiedDate: item.comments || item.code !== "Unassigned" ? "Sep 21, 10:30 AM" : "Sep 21, 08:00 AM"
-      }));
-      localStorage.setItem('carmax_research_vehicles_v1.8', JSON.stringify(formatted));
-      return formatted;
-    }
-
-    function reloadSampleData() {
-      if (confirm("Reset vehicle list and clear custom notes back to original CarMax source state?")) {
-        vehiclesState = loadDefaultDataset();
-        applyFiltersAndSort();
-      }
-    }
-
-    // TAG MANAGER ACTIONS
-    function toggleTagManagerModal() {
-      const modal = document.getElementById('tag-manager-modal');
-      modal.classList.toggle('hidden');
-      if (!modal.classList.contains('hidden')) {
-        renderTagManagerList();
-      }
-    }
-
-    function renderTagManagerList() {
-      const container = document.getElementById('tag-list-container');
-      container.innerHTML = '';
-
-      tagsState.forEach((tag) => {
-        const div = document.createElement('div');
-        div.className = "flex items-center justify-between bg-slate-900 p-2.5 rounded-xl border border-slate-700/80 gap-2";
-        div.innerHTML = `
-          <div class="flex items-center gap-2">
-            ${getResearchTagBadge(tag.name)}
-            <span class="text-xs text-slate-400 font-mono">(${tag.color})</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <button onclick="deleteTag('${tag.name}')" class="p-1 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors" title="Delete Tag">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
-          </div>
-        `;
-        container.appendChild(div);
-      });
-      lucide.createIcons();
-    }
-
-    function addNewTag() {
-      const nameInput = document.getElementById('new-tag-name');
-      const colorSelect = document.getElementById('new-tag-color');
-      const name = nameInput.value.trim();
-      const color = colorSelect.value;
-
-      if (!name) { alert("Please enter a valid tag name."); return; }
-      if (tagsState.some(t => t.name.toLowerCase() === name.toLowerCase())) { alert("A tag with this name already exists."); return; }
-
-      const newTag = { id: name, name: name, color: color };
-      tagsState.push(newTag);
-      localStorage.setItem('carmax_research_tags_v1.8', JSON.stringify(tagsState));
-
-      // Persist to Cloud Firestore 'tags' Collection
-      db.collection("tags").doc(name).set(newTag).catch(err => console.error("Error saving tag to Firestore:", err));
-
-      nameInput.value = '';
-      renderTagDropdowns();
-      renderTagManagerList();
-      applyFiltersAndSort();
-    }
-
-    function deleteTag(tagName) {
-      if (tagName === 'Unassigned') { alert("The 'Unassigned' tag cannot be deleted."); return; }
-
-      if (confirm(`Delete tag "${tagName}"? Vehicles currently tagged as "${tagName}" will be reassigned to "Unassigned".`)) {
-        tagsState = tagsState.filter(t => t.name !== tagName);
-        localStorage.setItem('carmax_research_tags_v1.8', JSON.stringify(tagsState));
-
-        // Delete from Firestore
-        db.collection("tags").doc(tagName).delete().catch(err => console.error("Error deleting tag from Firestore:", err));
-
-        vehiclesState.forEach(v => {
-          if (v.code === tagName) {
-            v.code = 'Unassigned';
-            db.collection("vehicles").doc(v.stockNum).set({ code: 'Unassigned' }, { merge: true });
-          }
-        });
-        localStorage.setItem('carmax_research_vehicles_v1.8', JSON.stringify(vehiclesState));
-
-        if (activeTagFilter === tagName) activeTagFilter = 'ALL';
-
-        renderTagDropdowns();
-        renderTagManagerList();
-        applyFiltersAndSort();
-      }
-    }
-
-    // SEARCH & FILTERING
-    function handleSearch(term) {
-      activeSearchTerm = term.toLowerCase().trim();
-      const clearBtn = document.getElementById('search-clear-btn');
-      if (activeSearchTerm) clearBtn.classList.remove('hidden');
-      else clearBtn.classList.add('hidden');
-      applyFiltersAndSort();
-    }
-
-    function clearSearch() {
-      document.getElementById('search-input').value = '';
-      handleSearch('');
-    }
-
-    function handleFilterTag(tag) {
-      activeTagFilter = tag;
-      applyFiltersAndSort();
-    }
-
-    function applyFiltersAndSort() {
-      // 1. Filter
-      filteredVehicles = vehiclesState.filter(v => {
-        const matchesTag = (activeTagFilter === 'ALL') || (v.code === activeTagFilter);
-        if (!matchesTag) return false;
-
-        if (!activeSearchTerm) return true;
-
-        const searchables = [
-          v.stockNum, v.year, v.vehicleDescription, v.lastScanLocation,
-          v.zoneDescription, v.vin, v.productStatus, v.color, v.comments, v.code
-        ].map(val => (val || '').toString().toLowerCase());
-
-        return searchables.some(field => field.includes(activeSearchTerm));
-      });
-
-      // 2. Sort
-      filteredVehicles.sort((a, b) => {
-        let valA = a[currentSortColumn];
-        let valB = b[currentSortColumn];
-
-        if (valA === undefined || valA === null) valA = '';
-        if (valB === undefined || valB === null) valB = '';
-
-        if (typeof valA === 'number' || currentSortColumn === 'originalIndex' || currentSortColumn === 'year') {
-          valA = Number(valA) || 0;
-          valB = Number(valB) || 0;
-        } else {
-          valA = valA.toString().toLowerCase();
-          valB = valB.toString().toLowerCase();
-        }
-
-        if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
-        if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
-        return 0;
-      });
-
-      renderUI();
-    }
-
-    // SORT CONTROLS
-    function sortTable(columnKey) {
-      if (currentSortColumn === columnKey) {
-        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
-      } else {
-        currentSortColumn = columnKey;
-        currentSortDirection = 'asc';
-      }
-      applyFiltersAndSort();
-    }
-
-    function resetSortOrder() {
-      currentSortColumn = 'originalIndex';
-      currentSortDirection = 'asc';
-      applyFiltersAndSort();
-    }
-
-    // RENDER UI
-    function renderUI() {
-      document.getElementById('record-count').innerText = filteredVehicles.length;
-      
-      const badge = document.getElementById('sort-indicator-badge');
-      if (currentSortColumn === 'originalIndex') {
-        badge.innerText = 'Sort: Original Order';
-        badge.className = 'ml-2 bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700';
-      } else {
-        badge.innerText = `Sorted by ${currentSortColumn} (${currentSortDirection.toUpperCase()})`;
-        badge.className = 'ml-2 bg-blue-900/60 text-blue-300 px-2 py-0.5 rounded border border-blue-700/50';
-      }
-
-      // Render Desktop Table Body
-      const tbody = document.getElementById('vehicle-table-body');
-      tbody.innerHTML = '';
-
-      if (filteredVehicles.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-400">No matching vehicle records found.</td></tr>`;
-      } else {
-        filteredVehicles.forEach(v => {
-          const row = document.createElement('tr');
-          row.className = "hover:bg-slate-700/30 transition-colors border-b border-slate-700/40";
-
-          const statusBg = v.productStatus === 'IN-TRANSIT' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-
-          row.innerHTML = `
-            <td class="px-3 py-3 text-slate-500 font-mono">${v.originalIndex}</td>
-            <td class="px-3 py-3 font-bold text-blue-400 font-mono">${v.stockNum}</td>
-            <td class="px-3 py-3 font-semibold text-slate-200">${v.year}</td>
-            <td class="px-3 py-3">
-              <div class="font-bold text-white max-w-xs truncate">${v.vehicleDescription}</div>
-              <div class="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
-                <span>Color: <strong class="text-slate-300">${v.color}</strong></span>
-                ${v.comments ? `<span class="text-amber-300 flex items-center gap-1"><i data-lucide="message-square" class="w-3 h-3"></i> ${v.comments.substring(0,25)}...</span>` : ''}
-              </div>
-            </td>
-            <td class="px-3 py-3 font-mono text-slate-300">${v.lastScanLocation}</td>
-            <td class="px-3 py-3 text-slate-400 text-[11px]">${v.zoneDescription}</td>
-            <td class="px-3 py-3 font-mono text-slate-400 text-[10px]">${v.vin}</td>
-            <td class="px-3 py-3">
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${statusBg}">${v.productStatus}</span>
-            </td>
-            <td class="px-3 py-3">${getResearchTagBadge(v.code)}</td>
-            <td class="px-3 py-3 text-slate-400 text-[10px]">${v.modifiedDate || '---'}</td>
-            <td class="px-3 py-3 text-right">
-              <button onclick="openEditModal('${v.stockNum}')" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all text-[11px] font-medium flex items-center gap-1 ml-auto">
-                <i data-lucide="edit-2" class="w-3 h-3"></i> Edit
-              </button>
-            </td>
-          `;
-          tbody.appendChild(row);
-        });
-      }
-
-      // Render Mobile Touch Cards
-      const cardContainer = document.getElementById('mobile-card-container');
-      cardContainer.innerHTML = '';
-      filteredVehicles.forEach(v => {
-        const card = document.createElement('div');
-        card.className = "bg-slate-800 border border-slate-700 rounded-2xl p-3.5 space-y-3 shadow-lg";
-        card.innerHTML = `
-          <div class="flex justify-between items-start gap-2">
-            <div class="min-w-0 flex-1">
-              <span class="text-xs font-mono text-blue-400 font-bold">#${v.stockNum}</span>
-              <h4 class="font-bold text-white text-sm mt-0.5 leading-snug break-words">${v.year} ${v.vehicleDescription}</h4>
-            </div>
-            <div class="shrink-0">${getResearchTagBadge(v.code)}</div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2 text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/50">
-            <div><span class="text-slate-500">Location:</span> <strong class="text-slate-200 font-mono">${v.lastScanLocation}</strong></div>
-            <div><span class="text-slate-500">Color:</span> <strong class="text-slate-200">${v.color}</strong></div>
-            <div class="col-span-2"><span class="text-slate-500">VIN:</span> <strong class="text-slate-300 font-mono text-[10px] break-all">${v.vin}</strong></div>
-            <div class="col-span-2"><span class="text-slate-500">Zone:</span> <strong class="text-slate-300 text-[11px]">${v.zoneDescription}</strong></div>
-          </div>
-
-          ${v.comments ? `
-            <div class="bg-amber-500/10 border border-amber-500/20 text-amber-200 p-2.5 rounded-xl text-xs">
-              <div class="font-bold text-[10px] uppercase tracking-wider text-amber-400 mb-0.5">Research Note</div>
-              "${v.comments}"
-            </div>
-          ` : ''}
-
-          <div class="flex items-center justify-between pt-1 border-t border-slate-700/50">
-            <span class="text-[10px] text-slate-400">Modified: ${v.modifiedDate || 'Never'}</span>
-            <button onclick="openEditModal('${v.stockNum}')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1 shadow-md shadow-blue-600/20">
-              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit Notes
-            </button>
-          </div>
-        `;
-        cardContainer.appendChild(card);
-      });
-
-      renderReportViews();
-      lucide.createIcons();
-    }
-
-    function getResearchTagBadge(code) {
-      const tagObj = tagsState.find(t => t.name === code);
-      const theme = tagObj ? tagObj.color : 'slate';
-
-      switch(theme) {
-        case 'purple': return `<span class="px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-[10px] font-bold inline-block">${code}</span>`;
-        case 'rose': return `<span class="px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded text-[10px] font-bold inline-block">${code}</span>`;
-        case 'amber': return `<span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] font-bold inline-block">${code}</span>`;
-        case 'blue': return `<span class="px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded text-[10px] font-bold inline-block">${code}</span>`;
-        case 'emerald': return `<span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded text-[10px] font-bold inline-block">${code}</span>`;
-        default: return `<span class="px-2 py-0.5 bg-slate-800 text-slate-300 border border-slate-700 rounded text-[10px] font-medium inline-block">${code}</span>`;
-      }
-    }
-
-    // RENDER CARMAX REPORTS 1 & 2
-    function renderReportViews() {
-      const container1 = document.getElementById('report-1-content');
-      const container2 = document.getElementById('report-2-content');
-
-      container1.innerHTML = '';
-      container2.innerHTML = '';
-
-      const sections = {};
-      filteredVehicles.forEach(v => {
-        const sec = v.reportSection || "INVENTORY RECONCILIATION";
-        if (!sections[sec]) sections[sec] = [];
-        sections[sec].push(v);
-      });
-
-      for (const [secTitle, items] of Object.entries(sections)) {
-        
-        // Report Format 1 (Research Notes Column)
-        const secEl1 = document.createElement('div');
-        secEl1.className = "border border-black p-3 space-y-2";
-        secEl1.innerHTML = `
-          <h4 class="font-bold border-b border-black pb-1 uppercase tracking-tight">${secTitle}</h4>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-[10px]">
-              <thead>
-                <tr class="border-b border-slate-400">
-                  <th class="py-1">Stock Num</th>
-                  <th>Year</th>
-                  <th>Vehicle Description</th>
-                  <th>Last Scan Date</th>
-                  <th>Scan Loc</th>
-                  <th>Zone Description</th>
-                  <th>Color</th>
-                  <th>VIN</th>
-                  <th>Status</th>
-                  <th>Research Notes</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-200">
-                ${items.map(item => `
-                  <tr>
-                    <td class="py-1 font-bold">${item.stockNum}</td>
-                    <td>${item.year}</td>
-                    <td>${item.vehicleDescription}</td>
-                    <td>${item.lastScanDate}</td>
-                    <td>${item.lastScanLocation}</td>
-                    <td>${item.zoneDescription}</td>
-                    <td>${item.color}</td>
-                    <td>${item.vin}</td>
-                    <td>${item.productStatus}</td>
-                    <td class="italic">${item.comments || '-'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-        container1.appendChild(secEl1);
-
-        // Report Format 2 (Research Tag Column)
-        const secEl2 = document.createElement('div');
-        secEl2.className = "border border-black p-3 space-y-2";
-        secEl2.innerHTML = `
-          <h4 class="font-bold border-b border-black pb-1 uppercase tracking-tight">${secTitle}</h4>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-[10px]">
-              <thead>
-                <tr class="border-b border-slate-400">
-                  <th class="py-1">Stock Num</th>
-                  <th>Year</th>
-                  <th>Vehicle Description</th>
-                  <th>Last Scan Date</th>
-                  <th>Scan Loc</th>
-                  <th>Zone Description</th>
-                  <th>Color</th>
-                  <th>VIN</th>
-                  <th>Status</th>
-                  <th>Research Tag</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-200">
-                ${items.map(item => `
-                  <tr>
-                    <td class="py-1 font-bold">${item.stockNum}</td>
-                    <td>${item.year}</td>
-                    <td>${item.vehicleDescription}</td>
-                    <td>${item.lastScanDate}</td>
-                    <td>${item.lastScanLocation}</td>
-                    <td>${item.zoneDescription}</td>
-                    <td>${item.color}</td>
-                    <td>${item.vin}</td>
-                    <td>${item.productStatus}</td>
-                    <td class="font-semibold text-purple-900">${item.code || 'Unassigned'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-        container2.appendChild(secEl2);
-      }
-    }
-
-    // PAGE NAVIGATION LOGIC
-    function navigateTo(targetView) {
-      const vInteractive = document.getElementById('view-interactive');
-      const vReportsHub = document.getElementById('view-reports-hub');
-      const vReport1 = document.getElementById('view-report-1');
-      const vReport2 = document.getElementById('view-report-2');
-
-      const btnInteractive = document.getElementById('nav-btn-interactive');
-      const btnReports = document.getElementById('nav-btn-reports');
-
-      // Hide all
-      [vInteractive, vReportsHub, vReport1, vReport2].forEach(el => el.classList.add('hidden'));
-
-      if (targetView === 'interactive') {
-        vInteractive.classList.remove('hidden');
-        btnInteractive.className = "px-3.5 py-1.5 text-xs font-medium rounded-md transition-all bg-blue-600 text-white shadow";
-        btnReports.className = "px-3.5 py-1.5 text-xs font-medium rounded-md text-slate-300 hover:text-white transition-all";
-      } else if (targetView === 'reports') {
-        vReportsHub.classList.remove('hidden');
-        btnReports.className = "px-3.5 py-1.5 text-xs font-medium rounded-md transition-all bg-blue-600 text-white shadow";
-        btnInteractive.className = "px-3.5 py-1.5 text-xs font-medium rounded-md text-slate-300 hover:text-white transition-all";
-      } else if (targetView === 'report1') {
-        vReport1.classList.remove('hidden');
-        btnReports.className = "px-3.5 py-1.5 text-xs font-medium rounded-md transition-all bg-blue-600 text-white shadow";
-        btnInteractive.className = "px-3.5 py-1.5 text-xs font-medium rounded-md text-slate-300 hover:text-white transition-all";
-      } else if (targetView === 'report2') {
-        vReport2.classList.remove('hidden');
-        btnReports.className = "px-3.5 py-1.5 text-xs font-medium rounded-md transition-all bg-blue-600 text-white shadow";
-        btnInteractive.className = "px-3.5 py-1.5 text-xs font-medium rounded-md text-slate-300 hover:text-white transition-all";
-      }
-    }
-
-    // EDIT MODAL LOGIC
-    function openEditModal(stockNum) {
-      activeEditingStockNum = stockNum;
-      const vehicle = vehiclesState.find(v => v.stockNum === stockNum);
-      if (!vehicle) return;
-
-      document.getElementById('modal-vehicle-subtitle').innerText = `Stock #${vehicle.stockNum}`;
-      document.getElementById('modal-vehicle-title').innerText = `${vehicle.year} ${vehicle.vehicleDescription}`;
-      document.getElementById('modal-vehicle-status').innerText = vehicle.productStatus;
-      document.getElementById('modal-vehicle-vin').innerText = `VIN: ${vehicle.vin}`;
-      document.getElementById('modal-vehicle-color').innerText = `Color: ${vehicle.color}`;
-      document.getElementById('modal-comments').value = vehicle.comments || '';
-      document.getElementById('modal-code').value = vehicle.code || 'Unassigned';
-
-      document.getElementById('edit-modal').classList.remove('hidden');
-    }
-
-    function closeEditModal() {
-      document.getElementById('edit-modal').classList.add('hidden');
-      activeEditingStockNum = null;
-    }
-
-    // SAVE VEHICLE NOTES & TAGS TO FIRESTORE & LOCAL STORAGE
-    function saveVehicleNotes() {
-      if (!activeEditingStockNum) return;
-
-      const vehicle = vehiclesState.find(v => v.stockNum === activeEditingStockNum);
-      if (vehicle) {
-        const newComments = document.getElementById('modal-comments').value.trim();
-        const newCode = document.getElementById('modal-code').value;
-
-        const now = new Date();
-        const formattedDate = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + 
-                              now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
-        vehicle.comments = newComments;
-        vehicle.code = newCode;
-        vehicle.modifiedDate = formattedDate;
-
-        // 1. Local Cache Update
-        localStorage.setItem('carmax_research_vehicles_v1.8', JSON.stringify(vehiclesState));
-
-        // 2. Persist to Cloud Firestore 'vehicles' Collection
-        db.collection("vehicles").doc(vehicle.stockNum).set({
-          stockNum: vehicle.stockNum,
-          year: vehicle.year,
-          vehicleDescription: vehicle.vehicleDescription,
-          lastScanLocation: vehicle.lastScanLocation,
-          zoneDescription: vehicle.zoneDescription,
-          color: vehicle.color,
-          vin: vehicle.vin,
-          productStatus: vehicle.productStatus,
-          comments: newComments,
-          code: newCode,
-          modifiedDate: formattedDate,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true })
-        .then(() => {
-          console.log(`Document #${vehicle.stockNum} successfully updated in Firestore.`);
-        })
-        .catch((error) => {
-          console.error("Error writing to Cloud Firestore: ", error);
-        });
-
-        applyFiltersAndSort();
-        closeEditModal();
-      }
-    }
-
-    function toggleConfigModal() {
-      document.getElementById('config-modal').classList.toggle('hidden');
-    }
-
-    function exportDataJSON() {
-      const exportPayload = {
-        tags: tagsState,
-        vehicles: vehiclesState
+    // Form Submit Handler (Handles both Create and Update)
+    recForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const recordId = document.getElementById("record-id").value;
+      const title = document.getElementById("title").value;
+      const category = document.getElementById("category").value;
+      const notes = document.getElementById("notes").value;
+
+      const recordData = {
+        title,
+        category,
+        notes,
+        updatedAt: serverTimestamp()
       };
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `carmax_vehicle_research_v1.8_${new Date().toISOString().slice(0,10)}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
+
+      try {
+        if (recordId) {
+          // UPDATE EXISTING RECORD
+          const docRef = doc(db, "rec_reports", recordId);
+          await updateDoc(docRef, recordData);
+          console.log("Record updated:", recordId);
+        } else {
+          // CREATE NEW RECORD
+          await addDoc(collectionRef, recordData);
+          console.log("New record added");
+        }
+
+        resetForm();
+      } catch (error) {
+        console.error("Error saving record to Firebase:", error);
+        alert("Error saving changes. Check browser console for details.");
+      }
+    });
+
+    // Edit Button Action
+    window.editRecord = (id, title, category, notes) => {
+      document.getElementById("record-id").value = id;
+      document.getElementById("title").value = title;
+      document.getElementById("category").value = category;
+      document.getElementById("notes").value = notes;
+
+      document.getElementById("form-title").textContent = "Edit Record";
+      document.getElementById("save-btn").textContent = "Update Record";
+      document.getElementById("cancel-btn").style.display = "inline-block";
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Delete Action
+    window.deleteRecord = async (id) => {
+      if (confirm("Are you sure you want to delete this record?")) {
+        try {
+          await deleteDoc(doc(db, "rec_reports", id));
+        } catch (error) {
+          console.error("Error deleting record:", error);
+        }
+      }
+    };
+
+    // Reset Form UI State
+    window.resetForm = () => {
+      document.getElementById("record-id").value = "";
+      recForm.reset();
+      document.getElementById("form-title").textContent = "Add New Record";
+      document.getElementById("save-btn").textContent = "Save Record";
+      document.getElementById("cancel-btn").style.display = "none";
+    };
+
+    // Helper utilities for HTML escaping
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, (m) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      }[m]));
+    }
+
+    function escapeQuotes(str) {
+      return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
     }
   </script>
 </body>
