@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CarMax Vehicle Research Hub v1.8</title>
+  <title>CarMax Vehicle Research Hub v1.8.2</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -23,7 +23,7 @@
       <div>
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-3">
           <i class="fa-solid font-bold text-blue-400 fa-car"></i> CarMax Vehicle Research Hub
-          <span class="bg-blue-600 text-xs px-2.5 py-1 rounded-full font-mono font-medium">v1.8</span>
+          <span class="bg-blue-600 text-xs px-2.5 py-1 rounded-full font-mono font-medium">v1.8.2</span>
         </h1>
         <p class="text-slate-400 text-sm mt-1">Track, filter, and add personalized notes to target inventory.</p>
       </div>
@@ -145,7 +145,7 @@
 
   <!-- JavaScript Logic -->
   <script>
-    // STEP 1: FIREBASE INITIALIZATION CONFIGURATION
+    // FIREBASE INITIALIZATION CONFIGURATION
     const firebaseConfig = {
       apiKey: "YOUR_ACTUAL_API_KEY",
       authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -155,7 +155,6 @@
       appId: "YOUR_APP_ID"
     };
 
-    // Initialize Firebase Compat Application
     let db = null;
     try {
       firebase.initializeApp(firebaseConfig);
@@ -174,27 +173,52 @@
     let vehiclesState = [];
     let activeEditingStockNum = null;
 
-    // STEP 3: INITIALIZE DATA STORE WITH REAL-TIME FIRESTORE SYNC
+    // DATA INITIALIZATION & HYBRID REAL-TIME SYNC
     function initDataStore() {
       const localData = localStorage.getItem('carmax_research_vehicles_v1.8');
       vehiclesState = localData ? JSON.parse(localData) : seedVehicles;
 
       if (db) {
-        // Real-time synchronization standard setup
         db.collection("vehicles").onSnapshot((snapshot) => {
           document.getElementById('status-indicator').className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
           document.getElementById('status-text').innerText = "Live Cloud Sync Active";
 
           if (!snapshot.empty) {
+            const remoteMap = new Map();
             snapshot.forEach((doc) => {
-              const remoteData = doc.data();
-              const localIndex = vehiclesState.findIndex(v => v.stockNum === doc.id);
+              remoteMap.set(doc.id, doc.data());
+            });
+
+            // Merge existing local items with incoming Firestore items
+            let updatedList = [...vehiclesState];
+
+            remoteMap.forEach((remoteData, docId) => {
+              const localIndex = updatedList.findIndex(v => String(v.stockNum) === String(docId));
               if (localIndex !== -1) {
-                vehiclesState[localIndex].comments = remoteData.comments || vehiclesState[localIndex].comments;
-                vehiclesState[localIndex].code = remoteData.code || vehiclesState[localIndex].code;
-                vehiclesState[localIndex].modifiedDate = remoteData.modifiedDate || vehiclesState[localIndex].modifiedDate;
+                // Update local document fields safely
+                updatedList[localIndex] = {
+                  ...updatedList[localIndex],
+                  ...remoteData,
+                  stockNum: docId
+                };
+              } else {
+                // If document exists remotely but not locally, create safe complete object
+                updatedList.push({
+                  stockNum: docId,
+                  year: remoteData.year || 2021,
+                  make: remoteData.make || 'CarMax',
+                  model: remoteData.model || `Vehicle #${docId}`,
+                  price: remoteData.price || 0,
+                  mileage: remoteData.mileage || 0,
+                  location: remoteData.location || 'Inventory',
+                  comments: remoteData.comments || '',
+                  code: remoteData.code || '',
+                  modifiedDate: remoteData.modifiedDate || ''
+                });
               }
             });
+
+            vehiclesState = updatedList;
             localStorage.setItem('carmax_research_vehicles_v1.8', JSON.stringify(vehiclesState));
             applyFiltersAndSort();
           }
@@ -211,7 +235,7 @@
       applyFiltersAndSort();
     }
 
-    // UI RENDER METHOD
+    // UI RENDER METHOD WITH SAFE PROPERTY FALLBACKS
     function renderVehicles(vehicles) {
       const grid = document.getElementById('vehicles-grid');
       const emptyState = document.getElementById('empty-state');
@@ -227,6 +251,14 @@
       }
 
       vehicles.forEach(vehicle => {
+        // Safe fallbacks to prevent undefined JS rendering bugs
+        const year = vehicle.year || '2021';
+        const make = vehicle.make || 'CarMax';
+        const model = vehicle.model || `Vehicle #${vehicle.stockNum}`;
+        const price = Number(vehicle.price || 0).toLocaleString();
+        const mileage = Number(vehicle.mileage || 0).toLocaleString();
+        const location = vehicle.location || 'Available';
+
         let tagBadge = '';
         switch(vehicle.code) {
           case 'FAVORITE':
@@ -248,17 +280,17 @@
         card.innerHTML = `
           <div class="p-5">
             <div class="flex justify-between items-start gap-2 mb-2">
-              <h2 class="font-bold text-lg text-slate-800 tracking-tight">${vehicle.year} ${vehicle.make} ${vehicle.model}</h2>
+              <h2 class="font-bold text-lg text-slate-800 tracking-tight">${year} ${make} ${model}</h2>
               <div>${tagBadge}</div>
             </div>
             
             <div class="flex justify-between items-baseline mb-4">
-              <span class="text-2xl font-extrabold text-blue-600">$${vehicle.price.toLocaleString()}</span>
-              <span class="text-xs font-medium text-gray-500">${vehicle.mileage.toLocaleString()} miles</span>
+              <span class="text-2xl font-extrabold text-blue-600">$${price}</span>
+              <span class="text-xs font-medium text-gray-500">${mileage} miles</span>
             </div>
 
             <div class="text-xs text-gray-500 mb-4 flex items-center gap-4">
-              <span><i class="fa-solid fa-location-dot mr-1"></i> ${vehicle.location}</span>
+              <span><i class="fa-solid fa-location-dot mr-1"></i> ${location}</span>
               <span><i class="fa-solid fa-barcode mr-1"></i> #${vehicle.stockNum}</span>
             </div>
 
@@ -286,7 +318,7 @@
       const sortFilter = document.getElementById('sort-filter').value;
 
       let filtered = vehiclesState.filter(vehicle => {
-        const matchesSearch = `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.stockNum}`.toLowerCase().includes(searchTerm);
+        const matchesSearch = `${vehicle.year || ''} ${vehicle.make || ''} ${vehicle.model || ''} ${vehicle.stockNum}`.toLowerCase().includes(searchTerm);
         
         let matchesCode = true;
         if (codeFilter === 'UNTAGGED') {
@@ -299,10 +331,17 @@
       });
 
       filtered.sort((a, b) => {
-        if (sortFilter === 'price-asc') return a.price - b.price;
-        if (sortFilter === 'price-desc') return b.price - a.price;
-        if (sortFilter === 'year-desc') return b.year - a.year;
-        if (sortFilter === 'mileage-asc') return a.mileage - b.mileage;
+        const priceA = Number(a.price) || 0;
+        const priceB = Number(b.price) || 0;
+        const yearA = Number(a.year) || 0;
+        const yearB = Number(b.year) || 0;
+        const mileageA = Number(a.mileage) || 0;
+        const mileageB = Number(b.mileage) || 0;
+
+        if (sortFilter === 'price-asc') return priceA - priceB;
+        if (sortFilter === 'price-desc') return priceB - priceA;
+        if (sortFilter === 'year-desc') return yearB - yearA;
+        if (sortFilter === 'mileage-asc') return mileageA - mileageB;
         return 0;
       });
 
@@ -312,9 +351,9 @@
     // MODAL CONTROL
     function openEditModal(stockNum) {
       activeEditingStockNum = stockNum;
-      const vehicle = vehiclesState.find(v => v.stockNum === stockNum);
+      const vehicle = vehiclesState.find(v => String(v.stockNum) === String(stockNum));
       if (vehicle) {
-        document.getElementById('modal-vehicle-title').innerText = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
+        document.getElementById('modal-vehicle-title').innerText = `${vehicle.year || ''} ${vehicle.make || 'Vehicle'} ${vehicle.model || ''}`;
         document.getElementById('modal-stock-num').innerText = `Stock #${vehicle.stockNum}`;
         document.getElementById('modal-comments').value = vehicle.comments || '';
         document.getElementById('modal-code').value = vehicle.code || '';
@@ -327,11 +366,11 @@
       document.getElementById('edit-modal').classList.add('hidden');
     }
 
-    // STEP 2: SAVE VEHICLE NOTES & TAGS TO FIRESTORE & LOCAL STORAGE
+    // SAVE VEHICLE NOTES & FULL ATTRIBUTES TO FIRESTORE & LOCAL STORAGE
     function saveVehicleNotes() {
       if (!activeEditingStockNum) return;
 
-      const vehicle = vehiclesState.find(v => v.stockNum === activeEditingStockNum);
+      const vehicle = vehiclesState.find(v => String(v.stockNum) === String(activeEditingStockNum));
       if (vehicle) {
         const newComments = document.getElementById('modal-comments').value.trim();
         const newCode = document.getElementById('modal-code').value;
@@ -344,20 +383,26 @@
         vehicle.code = newCode;
         vehicle.modifiedDate = formattedDate;
 
-        // 1. Update Local Cache for immediate UI reflection
+        // 1. Update Local Cache
         localStorage.setItem('carmax_research_vehicles_v1.8', JSON.stringify(vehiclesState));
 
-        // 2. Persist directly to Cloud Firestore using Compat API syntax
+        // 2. Persist to Cloud Firestore with full record payload
         if (db) {
-          db.collection("vehicles").doc(vehicle.stockNum).set({
-            stockNum: vehicle.stockNum,
+          db.collection("vehicles").doc(String(vehicle.stockNum)).set({
+            stockNum: String(vehicle.stockNum),
+            year: vehicle.year || 2021,
+            make: vehicle.make || 'CarMax',
+            model: vehicle.model || 'Vehicle',
+            price: vehicle.price || 0,
+            mileage: vehicle.mileage || 0,
+            location: vehicle.location || 'Available',
             comments: newComments,
             code: newCode,
             modifiedDate: formattedDate,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           }, { merge: true })
           .then(() => {
-            console.log(`Document #${vehicle.stockNum} updated successfully in Firestore.`);
+            console.log(`Document #${vehicle.stockNum} synced successfully.`);
           })
           .catch((error) => {
             console.error("Firestore Write Error: ", error);
