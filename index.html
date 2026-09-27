@@ -1,199 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vehicle Research Hub v1.8.3</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- Firebase v10 Compat SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-  <style>
-    body {
-      background-color: #0b1329;
-      color: #94a3b8;
-    }
-    .table-container {
-      background-color: #0f172a;
-      border: 1px solid #1e293b;
-    }
-    th {
-      background-color: #0b1329;
-      color: #94a3b8;
-    }
-    tr {
-      border-bottom: 1px solid #1e293b;
-    }
-    tr:hover {
-      background-color: #1e293b/50;
-    }
-  </style>
-</head>
-<body class="min-h-screen text-slate-300 font-sans pb-12">
-
-  <!-- Header / Navigation Bar -->
-  <header class="bg-[#0b1329] border-b border-slate-800 py-4 px-6 mb-6">
-    <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-      <div class="flex items-center gap-3">
-        <div class="bg-blue-600 p-2 rounded-lg text-white">
-          <i class="fa-solid fa-car text-xl"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-xl font-bold text-white tracking-tight">Vehicle Research Hub</h1>
-            <span class="bg-blue-900/60 text-blue-400 text-xs px-2 py-0.5 rounded font-mono font-semibold border border-blue-700/50">v1.8.3</span>
-          </div>
-          <p class="text-xs text-slate-400 mt-0.5">CarMax Inventory Reconciliation & Real-Time Lot Inspection</p>
-        </div>
-      </div>
-
-      <!-- Action Tabs & Mode Status -->
-      <div class="flex items-center gap-3">
-        <div class="bg-slate-900/80 p-1 rounded-lg border border-slate-800 flex items-center gap-1">
-          <button class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 shadow-sm">
-            <i class="fa-solid fa-border-all"></i> Interactive App
-          </button>
-          <button class="text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition">
-            <i class="fa-solid fa-file-lines"></i> Reports
-          </button>
-          <button class="text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition">
-            <i class="fa-solid fa-tags"></i> Manage Tags
-          </button>
-        </div>
-
-        <div id="sync-status" class="bg-slate-900/90 text-xs text-emerald-400 border border-emerald-900/50 px-3 py-1.5 rounded-lg flex items-center gap-2 font-medium">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="status-indicator"></span>
-          <span id="status-text">Live Cloud Sync Active</span>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Content Container -->
-  <main class="max-w-[1600px] mx-auto px-6">
-
-    <!-- Search & Control Toolbar -->
-    <div class="bg-[#0f172a] p-4 rounded-xl border border-slate-800 mb-6 flex flex-col lg:flex-row justify-between items-center gap-4">
-      <div class="relative flex-1 w-full">
-        <i class="fa-solid fa-search absolute left-3.5 top-3 text-slate-500 text-sm"></i>
-        <input type="text" id="search-input" placeholder="Search stock #, year, description, VIN, location, status, tag, or notes..." class="w-full pl-10 pr-4 py-2 bg-[#0b1329] border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
-      </div>
-
-      <div class="flex items-center gap-3 w-full lg:w-auto justify-end flex-wrap">
-        <select id="code-filter" class="bg-[#0b1329] border border-slate-800 text-slate-300 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
-          <option value="ALL">All Research Tags</option>
-          <option value="Unassigned">Unassigned</option>
-          <option value="Priority Lead">Priority Lead</option>
-          <option value="Needs Inspection">Needs Inspection</option>
-          <option value="Pending Review">Pending Review</option>
-          <option value="Hold">Hold</option>
-          <option value="Archive">Archive</option>
-        </select>
-
-        <button onclick="resetOrder()" class="bg-[#0b1329] hover:bg-slate-800 text-slate-300 border border-slate-800 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition">
-          <i class="fa-solid fa-rotate-left text-xs"></i> Reset Order
-        </button>
-
-        <button onclick="resetData()" class="bg-[#0b1329] hover:bg-slate-800 text-slate-300 border border-slate-800 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition">
-          <i class="fa-solid fa-arrows-rotate text-xs"></i> Reset Data
-        </button>
-
-        <button onclick="exportJSON()" class="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3.5 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition">
-          <i class="fa-solid fa-download text-xs"></i> Export JSON
-        </button>
-      </div>
-    </div>
-
-    <!-- Table Meta Summary -->
-    <div class="flex justify-between items-center text-xs text-slate-400 mb-3 px-1">
-      <div>
-        Showing <span id="vehicle-count" class="font-bold text-white">0</span> vehicles
-        <span class="ml-2 bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[11px]" id="sort-indicator">Sort: Original Order</span>
-      </div>
-      <div class="text-slate-500 italic">
-        <i class="fa-solid fa-arrow-down-up-across-line mr-1"></i> Click table headers to sort
-      </div>
-    </div>
-
-    <!-- Data Table Container -->
-    <div class="table-container rounded-xl overflow-hidden shadow-2xl">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[11px]">
-              <th class="py-3 px-4 w-12 text-center">#</th>
-              <th class="py-3 px-4 cursor-pointer hover:text-white" onclick="sortTable('stockNum')">STOCK #</th>
-              <th class="py-3 px-4 cursor-pointer hover:text-white" onclick="sortTable('year')">YEAR</th>
-              <th class="py-3 px-4 cursor-pointer hover:text-white" onclick="sortTable('vehicleDescription')">DESCRIPTION</th>
-              <th class="py-3 px-4 cursor-pointer hover:text-white" onclick="sortTable('lastScanLocation')">LOCATION</th>
-              <th class="py-3 px-4 cursor-pointer hover:text-white" onclick="sortTable('zoneDescription')">ZONE</th>
-              <th class="py-3 px-4 cursor-pointer hover:text-white" onclick="sortTable('vin')">VIN</th>
-              <th class="py-3 px-4 cursor-pointer hover:text-white" onclick="sortTable('productStatus')">STATUS</th>
-              <th class="py-3 px-4 cursor-pointer hover:text-white" onclick="sortTable('code')">RESEARCH TAG</th>
-              <th class="py-3 px-4 cursor-pointer hover:text-white" onclick="sortTable('modifiedDate')">MODIFIED</th>
-              <th class="py-3 px-4 text-center">ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody id="table-body">
-            <!-- Dynamic tabular vehicle rows render here -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- Edit Research Notes Modal -->
-  <div id="edit-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-[#0f172a] rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-800">
-      <div class="bg-[#0b1329] px-6 py-4 flex justify-between items-center border-b border-slate-800">
-        <h3 class="font-bold text-white text-base flex items-center gap-2">
-          <i class="fa-solid fa-pen-to-square text-blue-400"></i> Edit Research Tag & Comments
-        </h3>
-        <button onclick="closeEditModal()" class="text-slate-400 hover:text-white transition">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-
-      <div class="p-6 space-y-4">
-        <div>
-          <p id="modal-vehicle-title" class="font-bold text-slate-100 text-sm"></p>
-          <p id="modal-stock-num" class="text-xs font-mono text-slate-400 mt-0.5"></p>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Research Tag</label>
-          <select id="modal-code" class="w-full py-2 px-3 text-sm bg-[#0b1329] border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
-            <option value="Unassigned">Unassigned</option>
-            <option value="Priority Lead">Priority Lead</option>
-            <option value="Needs Inspection">Needs Inspection</option>
-            <option value="Pending Review">Pending Review</option>
-            <option value="Hold">Hold</option>
-            <option value="Archive">Archive</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Comments & Inspection Notes</label>
-          <textarea id="modal-comments" rows="4" placeholder="Enter comments or inspection notes..." class="w-full p-3 text-sm bg-[#0b1329] border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 placeholder-slate-600"></textarea>
-        </div>
-      </div>
-
-      <div class="bg-[#0b1329] px-6 py-3 flex justify-end gap-3 border-t border-slate-800">
-        <button onclick="closeEditModal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition">Cancel</button>
-        <button onclick="saveVehicleNotes()" class="px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-500 shadow-sm transition">Save Changes</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- JavaScript Logic -->
+<!-- JavaScript Logic -->
   <script>
     // Embedded Complete Seed Dataset from v1.7.4 Export
     const seedDataset = {
@@ -249,12 +54,13 @@
 
     // Firebase Configuration
     const firebaseConfig = {
-      apiKey: "YOUR_ACTUAL_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyALvORGMFcykCki6oOWOTdbgRykIDoNfWo",
+  authDomain: "rec-report-13c93.firebaseapp.com",
+  projectId: "rec-report-13c93",
+  storageBucket: "rec-report-13c93.firebasestorage.app",
+  messagingSenderId: "15562511464",
+  appId: "1:15562511464:web:e7e8b333eca318ecf857dd"
+
     };
 
     let db = null;
@@ -262,39 +68,75 @@
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
     } catch (e) {
-      console.warn("Firebase not configured. Operating in Local Cache mode.", e);
+      console.warn("Firebase not initialized. Check configuration.", e);
     }
 
-    let vehiclesState = [];
+    let vehiclesState = seedDataset.vehicles;
     let activeSortKey = null;
     let activeSortAsc = true;
     let activeEditingStockNum = null;
 
-    // Initialize Store
-    function initDataStore() {
-      const localData = localStorage.getItem('carmax_vehicle_research_v1.7.4');
-      vehiclesState = localData ? JSON.parse(localData).vehicles : seedDataset.vehicles;
+    // Seed Complete Records to Firestore Database
+    async function seedFirestoreDatabase() {
+      if (!db) return;
+      const batch = db.batch();
+      
+      seedDataset.vehicles.forEach(vehicle => {
+        const docRef = db.collection("vehicles").doc(String(vehicle.stockNum));
+        batch.set(docRef, {
+          ...vehicle,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      });
 
+      try {
+        await batch.commit();
+        console.log("Firestore database successfully populated with all 38 vehicles.");
+      } catch (err) {
+        console.error("Error seeding Firestore database:", err);
+      }
+    }
+
+    // Initialize Store & Setup Real-time Sync
+    function initDataStore() {
       if (db) {
         db.collection("vehicles").onSnapshot((snapshot) => {
           document.getElementById('status-indicator').className = "w-2 h-2 rounded-full bg-emerald-500";
           document.getElementById('status-text').innerText = "Live Cloud Sync Active";
 
-          if (!snapshot.empty) {
+          if (snapshot.empty) {
+            // Populate database automatically if empty
+            seedFirestoreDatabase();
+          } else {
+            let updatedList = [...vehiclesState];
+            let needsSeeding = false;
+
             snapshot.forEach((doc) => {
               const remoteData = doc.data();
-              const localIndex = vehiclesState.findIndex(v => String(v.stockNum) === String(doc.id));
-              if (localIndex !== -1) {
-                vehiclesState[localIndex].comments = remoteData.comments !== undefined ? remoteData.comments : vehiclesState[localIndex].comments;
-                vehiclesState[localIndex].code = remoteData.code || vehiclesState[localIndex].code;
-                vehiclesState[localIndex].modifiedDate = remoteData.modifiedDate || vehiclesState[localIndex].modifiedDate;
+              
+              // If records in Firestore are incomplete, trigger a full write back
+              if (!remoteData.vehicleDescription || !remoteData.vin) {
+                needsSeeding = true;
+              }
+
+              const idx = updatedList.findIndex(v => String(v.stockNum) === String(doc.id));
+              if (idx !== -1) {
+                updatedList[idx] = { ...updatedList[idx], ...remoteData };
+              } else {
+                updatedList.push(remoteData);
               }
             });
+
+            if (needsSeeding) {
+              seedFirestoreDatabase();
+            }
+
+            vehiclesState = updatedList;
             saveLocalCache();
             renderTable();
           }
         }, (error) => {
-          console.error("Firestore error:", error);
+          console.error("Firestore sync error:", error);
           document.getElementById('status-indicator').className = "w-2 h-2 rounded-full bg-amber-500";
           document.getElementById('status-text').innerText = "Local Cache Mode";
         });
@@ -387,7 +229,7 @@
       });
     }
 
-    // Table Header Sorting
+    // Table Sorting Controls
     function sortTable(key) {
       if (activeSortKey === key) {
         activeSortAsc = !activeSortAsc;
@@ -407,15 +249,16 @@
       renderTable();
     }
 
-    function resetData() {
-      if (confirm("Reset all vehicle research notes to default v1.7.4 state?")) {
+    async function resetData() {
+      if (confirm("Reset all vehicle research notes and force re-sync with Firestore database?")) {
         vehiclesState = JSON.parse(JSON.stringify(seedDataset.vehicles));
         saveLocalCache();
+        await seedFirestoreDatabase();
         resetOrder();
       }
     }
 
-    // Modal Control
+    // Modal Editing Controls
     function openEditModal(stockNum) {
       activeEditingStockNum = stockNum;
       const vehicle = vehiclesState.find(v => String(v.stockNum) === String(stockNum));
@@ -433,8 +276,8 @@
       document.getElementById('edit-modal').classList.add('hidden');
     }
 
-    // Save Research Notes & Cloud Persistence
-    function saveVehicleNotes() {
+    // Save and Sync Changes directly to Firestore
+    async function saveVehicleNotes() {
       if (!activeEditingStockNum) return;
 
       const vehicle = vehiclesState.find(v => String(v.stockNum) === String(activeEditingStockNum));
@@ -453,13 +296,17 @@
         saveLocalCache();
 
         if (db) {
-          db.collection("vehicles").doc(String(vehicle.stockNum)).set({
-            stockNum: String(vehicle.stockNum),
-            comments: newComments,
-            code: newCode,
-            modifiedDate: formattedDate,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge: true }).catch(err => console.error("Firestore Save Error:", err));
+          try {
+            await db.collection("vehicles").doc(String(vehicle.stockNum)).set({
+              ...vehicle,
+              comments: newComments,
+              code: newCode,
+              modifiedDate: formattedDate,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+          } catch (err) {
+            console.error("Firestore Save Error:", err);
+          }
         }
 
         renderTable();
@@ -489,5 +336,3 @@
     // Initial Launch
     window.addEventListener('DOMContentLoaded', initDataStore);
   </script>
-</body>
-</html>
